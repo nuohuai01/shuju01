@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>项目档案 · 代理商/运营商/专业公司</title>
+<script>if(window.self!==window.top)document.documentElement.classList.add('embedded');</script>
+<script>
+  window.addEventListener("error",function(e){try{var el=document.getElementById("gErr");if(!el){el=document.createElement("div");el.id="gErr";el.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#991b1b;color:#fff;padding:9px 14px;border-radius:10px;font-size:12.5px;line-height:1.5;max-width:72vw;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none";document.body.appendChild(el);}el.textContent="页面出错："+(e.message||"未知错误")+(e.filename?"  ("+e.filename.split("/").pop()+":"+e.lineno+")":"");el.style.display="block";clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},7000);}catch(_){}});
+  function goTab(n){try{localStorage.setItem("wb_shell_tab",JSON.stringify({name:n,qs:""}));}catch(e){}if(window.parent!==window&&parent.switchTab){parent.switchTab(n);return false;}return true;}
+</script>
+<script>
+(function(){
+  function labelAll(){
+    document.querySelectorAll(".tx-table,.tbl").forEach(function(t){
+      var heads=Array.from((t.tHead&&t.tHead.rows[0]&&t.tHead.rows[0].cells)||[]).map(function(th){return (th.textContent||"").replace(/\s+/g,"").trim();});
+      Array.from(t.tBodies||[]).forEach(function(tb){
+        Array.from(tb.rows||[]).forEach(function(tr){
+          Array.from(tr.cells||[]).forEach(function(td,i){
+            if(!td.dataset.label)td.dataset.label=heads[i]||"";
+            .hbar{grid-template-columns:1fr!important;gap:4px;}
+    .hbar .hn{white-space:normal;}
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",labelAll);
+  else labelAll();
+  setTimeout(labelAll,800);setTimeout(labelAll,2000);
+})();
+</script>
+
+<link rel="stylesheet" href="common.css?v=2">
+
+<script>
+if(/share=1/.test(location.search)){(function(){
+  function boot(d){
+    if(!d||!d.ls)return;
+    Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);}catch(e){}});
+    var def="dashboard.html";
+    try{var u=new URL(location.href);u.searchParams.delete("share");history.replaceState(null,"",u.pathname+(u.searchParams.toString()?"?"+u.searchParams.toString():""));location.reload();}catch(e){}
+  }
+  fetch("snapshot.json?t="+Date.now()).then(function(r){if(!r.ok)throw new Error("no snapshot");return r.json();}).then(function(d){boot(d);})
+  .catch(function(){try{alert("分享数据加载失败，请确认与快照文件在同一部署目录访问。");}catch(e){}});
+})();}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-7L9 4H5a2 2 0 0 0-2 2z"/></svg>
+      </div>
+      <div>
+        <h1>业务交接档案</h1>
+        <p>新接入项目 · 代理商 / 运营商 / 专业公司归档</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="layout-ctl" id="layoutCtl" title="切换布局">
+        <button class="btn sm" id="btnNarrow" onclick="setLayout('narrow')">单列</button>
+        <button class="btn sm" id="btnWide" onclick="setLayout('wide')">双列</button>
+      </div>
+    </div>
+    <nav class="tabs board-nav">
+      <a class="tab" href="dashboard.html" onclick="return goTab('dash')">数据看板</a>
+      <a class="tab active" href="project.html" onclick="return goTab('proj')">项目档案</a>
+      <a class="tab" href="product.html" onclick="return goTab('prod')">产品台账</a>
+    </nav>
+  </header>
+
+  <!-- 添加档案 -->
+  <section class="module" id="addSec">
+    <h2 class="coll-h" id="addToggle" onclick="toggleAdd()" title="点击折叠 / 展开">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      添加档案
+      <span class="chev">▾</span>
+    </h2>
+    <div class="coll-body" id="addBody">
+    <p class="desc">记录新接入的代理商 / 运营商 / 专业公司档案，自动存本地。带 * 为必填。</p>
+    <form id="pjForm">
+      <div class="grp-title">基础信息</div>
+      <div class="form-grid">
+        <div><label class="fld">名称 / 客户 *</label><input id="pjName" class="einp" placeholder="如：浙江电信 / 上海昭强科技" required></div>
+        <div><label class="fld">简称</label><div class="short-row"><input id="pjShort" class="einp" placeholder="如：浙江电信" oninput="autoGenTarget=null"><button type="button" class="btn sm ghost auto-short-btn" title="按名称自动生成简称（生成后仍可手动修改）" onclick="autoFillShort('pjName','pjShort')">↻ 自动</button></div></div>
+        <div><label class="fld">区域</label><input id="pjRegion" class="einp" placeholder="如：北区 / 浙江"></div>
+        <div><label class="fld">当前状态</label>
+          <select id="pjStatus" class="einp">
+            <option value="筹备中">筹备中</option>
+            <option value="进行中" selected>进行中</option>
+            <option value="已上线">已上线</option>
+            <option value="已暂停">已暂停</option>
+            <option value="已结束">已结束</option>
+          </select>
+        </div>
+        <div><label class="fld">项目分类</label>
+          <select id="pjType" class="einp">
+            <option value="代理商" selected>代理商</option>
+            <option value="运营商">运营商</option>
+            <option value="专业公司">专业公司</option>
+          </select>
+        </div>
+        <div><label class="fld">省份 / 运营商</label><input id="pjProvince" class="einp" placeholder="如：山西电信 / 全国移动"></div>
+        <div><label class="fld">运营商</label>
+          <select id="pjOperator" class="einp">
+            <option value="">—</option><option value="电信">电信</option><option value="移动">移动</option><option value="联通">联通</option><option value="华数">华数</option><option value="其他">其他</option>
+          </select>
+        </div>
+        <div><label class="fld">产品类型</label><input id="pjProductType" class="einp" placeholder="如：存量 / 宽带 / 号卡"></div>
+        <div><label class="fld">聚杰接口 ID</label><input id="pjIfaceId" class="einp" placeholder="账户ID（非金额）"></div>
+        <div><label class="fld">合同有效期</label><input id="pjContract" class="einp" placeholder="如：2026-12-31 或 到期自动顺延"></div>
+        <div><label class="fld">运营商对接人</label><input id="pjContact" class="einp" placeholder="如：张慧"></div>
+        <div><label class="fld">对接部门</label><input id="pjDept" class="einp" placeholder="如：公客 / 渠道中心"></div>
+        <div class="full"><label class="fld">结算规则</label><input id="pjSettle" class="einp" placeholder="如：T+1月CPA一次性"></div>
+        <div class="full"><label class="fld">待处理事项</label><textarea id="pjTodo" class="einp" placeholder="当前正在对接 / 待跟进的事项"></textarea></div>
+        <div class="full"><label class="fld">日常对接事项</label><textarea id="pjDaily" class="einp" placeholder="日常运营 / 维护事项"></textarea></div>
+        <div class="full"><label class="fld">对接群</label><textarea id="pjGroups" class="einp" placeholder="相关对接群名称"></textarea></div>
+        <div class="full"><label class="fld">日常备忘</label><textarea id="pjNotes" class="einp" placeholder="结算方、注意事项等"></textarea></div>
+        <div class="full"><label class="fld">结算情况</label><textarea id="pjSettleDetail" class="einp" placeholder="如：已结算至26年6月账期"></textarea></div>
+        <div class="full"><label class="fld">重点风险 / 遗留</label><textarea id="pjRisk" class="einp" placeholder="需重点关注的风险或遗留问题"></textarea></div>
+      </div>
+      <div class="row-actions">
+        <button class="btn primary" type="submit">保存档案</button>
+        <span class="hint" id="pjHint">信息仅保存在本机浏览器，不会上传。</span>
+      </div>
+    </form>
+    </div>
+  </section>
+
+  <div class="main-grid">
+    <!-- 汇总看板 -->
+    <section class="module dash-col">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        汇总看板
+      </h2>
+      <p class="desc">根据档案自动统计；交接信息录入后实时更新。产品维度见「产品台账」页。</p>
+      <div class="stats" id="sumStats"></div>
+      <div class="sum-row" id="sumRow"></div>
+      <div class="rel-banner" style="margin-top:12px;">
+        <span>项目与产品按「运营商」关联</span>
+        <a class="linkbtn board-nav" href="product.html" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod');return false;}">查看全部产品台账 →</a>
+      </div>
+      <div id="sumIssues"></div>
+    </section>
+
+    <!-- 档案列表 -->
+    <section class="module list-col">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-7L9 4H5a2 2 0 0 0-2 2z"/></svg>
+        档案列表（<span id="pjCount">0</span>）
+      </h2>
+      <p class="desc">档案按「运营商」纵向分区；卡片标注分类（代理商 / 运营商 / 专业公司）。点击「编辑」可修改任意字段；卡片上「关联产品 N」可跳到对应运营商的上架产品。</p>
+      <div class="filterbar" id="typeFilterBar">
+        <span class="chip on" data-t="all" onclick="setTypeFilter('all')">全部</span>
+        <span class="chip" data-t="agent" onclick="setTypeFilter('agent')">代理商</span>
+        <span class="chip" data-t="operator" onclick="setTypeFilter('operator')">运营商</span>
+        <span class="chip" data-t="proco" onclick="setTypeFilter('proco')">专业公司</span>
+      </div>
+      <div class="pj-search">
+        <input type="text" id="pjSearch" class="einp" placeholder="🔍 模糊搜索：名称 / 简称 / 省份 / 运营商 / 联系人…">
+        <button class="pj-clear" id="pjKwClear" onclick="clearKw()" title="清空搜索" style="display:none;">✕</button>
+      </div>
+      <div id="relFilter"></div>
+      <div class="list" id="pjList"></div>
+    </section>
+  </div>
+</div>
+
+<!-- 页面内提示条 / 确认弹窗 -->
+<div class="wb-toast" id="wbToast"></div>
+<div class="wb-cfm-mask" id="wbCfmMask">
+  <div class="wb-cfm">
+    <h3 id="wbCfmTitle">确认</h3>
+    <div class="m-msg" id="wbCfmMsg"></div>
+    <div class="m-acts">
+      <button class="btn ghost" onclick="wbCfmCancel()">取消</button>
+      <button class="btn del" id="wbCfmOk">确认</button>
+    </div>
+  </div>
+</div>
+
+<script src="seed-data.js"></script>
+<script>
+const K="wb_project_archive";
+const MIG="wb_proj_v2";
+const ST={筹备中:"stx-prep",运作中:"stx-run",进行中:"stx-run",已上线:"stx-live",已暂停:"stx-pause",已结束:"stx-end"};
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function uid(){return Math.random().toString(36).slice(2,10);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function daysBetween(a,b){const x=new Date(a),y=new Date(b);return Math.round((y-x)/86400000);}
+function isDateStr(s){return typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s);}
+
+// ---- 页面内提示条 / 确认弹窗（iframe 沙箱内也可靠，替代原生 alert/confirm）----
+let _toastTimer=null;
+function showToast(msg,type){
+  const t=document.getElementById("wbToast");
+  if(!t)return;
+  t.textContent=msg;
+  t.className="wb-toast"+(type==="ok"?" ok":type==="err"?" err":"");
+  void t.offsetWidth;
+  t.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove("show"),3400);
+}
+let _cfmOk=null;
+function showConfirm(msg,okFn,title){
+  const m=document.getElementById("wbCfmMask");
+  if(!m)return;
+  document.getElementById("wbCfmTitle").textContent=title||"确认";
+  document.getElementById("wbCfmMsg").innerHTML=msg;
+  _cfmOk=okFn||null;
+  document.getElementById("wbCfmOk").onclick=()=>{const fn=_cfmOk;_cfmOk=null;m.classList.remove("show");if(fn)fn();};
+  m.classList.add("show");
+}
+function wbCfmCancel(){document.getElementById("wbCfmMask").classList.remove("show");_cfmOk=null;}
+
+// 类型规范化：兼容旧数据 / 南区导入 / 手工录入的别名
+function normType(t){
+  const s=String(t==null?"":t);
+  if(s.indexOf("代理")>=0) return "代理商";
+  if(s.indexOf("运营")>=0) return "运营商";
+  if(s.indexOf("专业")>=0) return "专业公司";
+  if(s==="代理商"||s==="运营商"||s==="专业公司") return s;
+  if(s.indexOf("区域")>=0) return "运营商"; // 旧版「区域业务交接」兜底
+  return "代理商"; // 未知 / 空，沿用历史默认
+}
+function smartCat(name){
+  const s=String(name||"");
+  if(/电信|移动|联通|通信|广电|华数|号百|咪咕|天翼|运营商/.test(s)) return "运营商";
+  return "专业公司";
+}
+function catOf(p){return normType(p.type);}
+
+let projects=load(K,[]);
+let editingId=null;
+let editingSub=null;
+let addingSubPid=null; // 正在为哪个主项新增子项
+let filterOp=(new URLSearchParams(location.search).get("op")||"").trim();
+let focusName=(new URLSearchParams(location.search).get("name")||"").trim();
+let metricFilter="all"; // all | overdue | soon | gap  —— 汇总看板下钻筛选
+// 重点遗留/对接事项：模块折叠 + 条目定位 + 就地编辑 状态
+let issuesCollapsed=false;try{issuesCollapsed=localStorage.getItem("wb_proj_issues_coll")==="1";}catch(e){}
+let issEditId=null;   // 正在就地编辑的档案 id
+let spotPjId=null;    // 当前被点亮的档案卡片 id
+let soloPjId=null;    // 点击条目后「只看该档案」筛选（null=全部）
+
+function nameHit(p,q){
+  if(!q)return false;
+  const n=p.name||"",s=p.short||"";
+  return n===q||(n&&n.indexOf(q)>=0)||(q.indexOf(n)>=0&&n.length>1)||(s&&(s===q||s.indexOf(q)>=0));
+}
+
+function matchMetric(p,m){
+  if(m==="overdue"){return isDateStr(p.contract)&&daysBetween(todayStr(),p.contract)<0&&p.status!=="已结束"&&p.status!=="已暂停";}
+  if(m==="soon"){return isDateStr(p.contract)&&(()=>{const d=daysBetween(todayStr(),p.contract);return d>=0&&d<=90;})();}
+  if(m==="gap"){return !p.contact;}
+  return true;
+}
+function metricLabel(m){
+  return {all:"全部档案",overdue:"合同逾期",soon:"90天内到期",gap:"对接人缺口"}[m]||"";
+}
+
+// ---- 运营商关联 ----
+function inferOp(x){
+  if(x.operator) return x.operator;
+  const s=(x.name||"")+(x.province||"")+(x.short||"");
+  if(s.indexOf("电信")>=0||s.indexOf("天翼")>=0) return "电信";
+  if(s.indexOf("移动")>=0) return "移动";
+  if(s.indexOf("联通")>=0) return "联通";
+  if(s.indexOf("华数")>=0) return "华数";
+  return "";
+}
+function projOp(x){return x.operator||inferOp(x);}
+function prodOp(p){
+  if(p.operator) return p.operator;
+  const s=(p.name||"")+(p.supplier||"");
+  if(s.indexOf("电信")>=0) return "电信";
+  if(s.indexOf("移动")>=0) return "移动";
+  if(s.indexOf("联通")>=0) return "联通";
+  if(s.indexOf("华数")>=0) return "华数";
+  return "";
+}
+function relatedProducts(op,p){
+  if(!p && !op) return 0;
+  // 优先读产品台账页的持久化数据（含用户新增/删除），无则回退种子
+  let data=null;try{data=JSON.parse(localStorage.getItem("wb_product_data"));}catch(e){data=null;}
+  const stock=(data&&Array.isArray(data.stock))?data.stock:SEED_PRODUCTS.stock;
+  const broad=(data&&Array.isArray(data.broadband))?data.broadband:SEED_PRODUCTS.broadband;
+  // 仅按机构名/简称/省+运 匹配 supplier/provider，不再 fallback 到运营商总数（避免把别省电信产品算到本档案）
+  if(p){
+    const nm=p.name||"",sh=p.short||"";
+// 匹配口径（与产品台账供货方取值一致）：档案有简称 → 供货方必须精确等于简称；
+    // 档案无简称 → 供货方精确等于全称兜底。规范化空白，不做包含/“省+运营商”宽泛匹配。
+    const norm=v=>String(v||"").replace(/\s+/g,"");
+    const nsh=norm(sh),nnm=norm(nm);
+    const hit=(s)=>{
+      if(!s)return false;
+      const ns=norm(s);
+      if(nsh)return ns===nsh;
+      return ns===nnm;
+    };
+    // 统计口径：按「档案简称/全名/省+运营商」匹配产品供货方（供应商以简称填写时，改简称即可实时生效）
+    let n=0;
+    stock.forEach(x=>{if(hit(x.supplier))n++;});
+    broad.forEach(x=>{if(hit(x.provider))n++;});
+    return n;
+  }
+  // 仅传 op（按运营商筛选区）：按运营商聚合所有产品
+  let n=0;
+  stock.forEach(x=>{if(prodOp(x)===op)n++;});
+  broad.forEach(x=>{if(prodOp(x)===op)n++;});
+  return n;
+}
+function relatedProjects(op){
+  if(!op) return 0;
+  return projects.filter(p=>projOp(p)===op).length;
+}
+
+// ---- 首次打开：预录种子数据（兼容旧版已存数据，避免重复）----
+function migrateOld(p){
+  return {
+    id:p.id||uid(),
+    type:p.type||"代理商",
+    region:p.region||"北区",
+    name:p.name||"",
+    short:p.short||"",
+    province:p.province||"",
+    operator:p.operator||"",
+    productType:p.productType||"",
+    settle:p.settle||"",
+    interfaceId:p.ifaceId||p.interfaceId||"",
+    contract:p.contract||(p.end||""),
+    contact:p.opContact||p.contact||"",
+    dept:p.dept||"",
+    todo:p.ongoing||"",
+    daily:p.dailyWork||"",
+    groups:p.groups||"",
+    notes:p.notes||p.desc||"",
+    settleDetail:p.settleDetail||"",
+    risk:p.risk||"",
+    status:p.status||"进行中",
+    sub:Array.isArray(p.sub)?p.sub:[],
+    created:p.created||new Date().toISOString()
+  };
+}
+if(!load(MIG,false)){
+  if(projects.length>0){
+    projects=projects.map(migrateOld);
+    const zj=SEED_ARCHIVES.filter(a=>a.region==="浙江").map(a=>({...a,id:uid(),created:new Date().toISOString()}));
+    projects=projects.concat(zj);
+  }else{
+    projects=SEED_ARCHIVES.map(a=>({...a,id:uid(),created:new Date().toISOString()}));
+  }
+  save(K,projects);
+  save(MIG,true);
+}
+// 为子项补齐稳定 sid（用于编辑定位）
+let _sidChanged=false;
+projects.forEach(p=>{(p.sub||[]).forEach(s=>{if(!s.sid){s.sid=uid();_sidChanged=true;}});});
+if(_sidChanged) save(K,projects);
+
+// 合并种子档案（增量列表机制）：维护已合并 name 集合（localStorage），每次加载只补录新增 seed；
+// 用户手动删除的种子档案（已记录）不会被加回；后续新增 seed 无需升级版本。
+(function mergeSeedIncremental(){
+  try{
+    let merged={};
+    try{merged=JSON.parse(localStorage.getItem("wb_proj_seed_merged")||"{}")||{};}catch(e){}
+    const have=new Set(projects.map(p=>p.name));
+    let added=0;
+    SEED_ARCHIVES.forEach(a=>{
+      if(merged[a.name])return;
+      merged[a.name]=1;
+      if(!have.has(a.name)){
+        projects.push({...a,id:uid(),created:new Date().toISOString()});
+        added++;
+      }
+    });
+    if(added){save(K,projects);}
+    try{localStorage.setItem("wb_proj_seed_merged",JSON.stringify(merged));}catch(e){}
+    try{localStorage.removeItem("wb_proj_seed_merged_v5");}catch(e){}
+  }catch(e){}
+})();
+// 一次性迁移：合并重复档案（"简称"与"全名+股份有限公司"视为同一机构）
+(function mergeDupArchives(){
+  try{
+    if(localStorage.getItem("wb_proj_dup_merge_v2"))return;
+    const pairs=[
+      ["中国电信股份有限公司深圳分公司","深圳电信"],
+      ["中国电信股份有限公司广州分公司","广州电信"],
+      ["中国电信股份有限公司广西分公司","广西电信"]
+    ];
+    let changed=false;
+    for(const [fullName,shortName] of pairs){
+      const full=projects.find(p=>p.name===fullName);
+      const dup=projects.find(p=>p.name===shortName);
+      if(full&&dup&&full!==dup){
+        if(!full.short)full.short=shortName;
+        ["contact","todo","daily","groups","notes","settleDetail","risk","contract","interfaceId","dept","settle"].forEach(k=>{if(!full[k]&&dup[k])full[k]=dup[k];});
+        (dup.sub||[]).forEach(s=>{(full.sub=full.sub||[]).push(s);});
+        projects=projects.filter(p=>p!==dup);
+        changed=true;
+      }else if(full&&!full.short){
+        full.short=shortName;
+        changed=true;
+      }else if(dup&&!full){
+        dup.name=fullName;
+        dup.short=shortName;
+        changed=true;
+      }
+    }
+    if(changed)save(K,projects);
+    try{localStorage.setItem("wb_proj_dup_merge_v2","1");}catch(e){}
+    try{localStorage.removeItem("wb_proj_gx_merge_v1");}catch(e){}
+  }catch(e){}
+})();
+// 一次性：旧版 代理商交接 / 区域业务交接 按名称精确归类到新三类
+(function(){
+  const CAT_MIG="wb_proj_cat_v4";
+  if(!load(CAT_MIG,false)){
+    let ch=false;
+    projects.forEach(p=>{
+      const t=String(p.type||"");
+      if(t==="代理商交接"){p.type="代理商";ch=true;}
+      else if(t==="区域业务交接"){p.type=smartCat(p.name);ch=true;}
+    });
+    if(ch) save(K,projects);
+    save(CAT_MIG,true);
+  }
+})();
+// 规范化 type 字段（覆盖旧版 / 导入数据 / 手工录入的非标准值）→ 新三类
+(function(){
+  let ch=false;
+  projects.forEach(p=>{const nt=normType(p.type);if(nt!==p.type){p.type=nt;ch=true;}});
+  if(ch) save(K,projects);
+})();
+// ---- v2：简称自动派生 ----
+function deriveShort(name){
+  if(!name)return "";
+  let s=String(name).trim().replace(/（[^）]*）/g,"");
+  const orig=s;
+  // 1) 「xxx公司-品牌」形态：保留机构主体（品牌段仅做展示后缀，不用于简称）
+  s=s.replace(/(公司|集团|中心|研究院)[-—·].*$/,"$1");
+  // 2) 剥公司后缀（分公司先行，兼容「中国XX股份有限公司XX分公司」）
+  if(s.endsWith("分公司"))s=s.slice(0,-"分公司".length);
+  const tails=["股份有限公司","有限责任公司","有限公司","股份有限公司","股份公司","集团有限公司","集团","公司"];
+  for(const t of tails){ if(s.endsWith(t)){ s=s.slice(0,-t.length); break; } }
+  // 3) 尾部业务词整体截断（科技/通信/信息/网络…）
+  s=s.replace(/(科技有限公司|信息技术|信息科技|电子商务|科技|通信|信息|网络|传媒|文化|实业|发展|引擎|数据|智能|软件|系统|服务)+$/,"");
+  // 4) 「深圳市/广州市…」去「市」，保留城市名（深圳市予糯→深圳予糯）
+  s=s.replace(/^(北京市?|上海市?|天津市?|重庆市?|深圳市?|广州市?|杭州市?|成都市?|武汉市?|西安市?|南京市?|苏州市?|郑州市?|长沙市?|东莞市?|青岛市?|宁波市?|佛山市?|合肥市?|昆明市?|大连市?|福州市?|厦门市?|济南市?|哈尔滨市?|石家庄市?|贵阳市?|南昌市?|无锡市?|温州市?|常州市?|南宁市?|太原市?|长春市?|兰州市?|乌鲁木齐市?|呼和浩特市?|泉州市?|南通市?|徐州市?|潍坊市?|绍兴市?|台州市?|烟台市?|洛阳市?|珠海市?|金华市?|惠州市?|嘉兴市?|保定市?|中山市?|临沂市?|唐山市?|株洲市?|盐城市?|沧州市?|咸阳市?|衡阳市?|泰安市?|邢台市?|信阳市?|南充市?|莆田市?|漳州市?|镇江市?|襄阳市?|岳阳市?|汕头市?|江门市?|桂林市?|赣州市?|许昌市?|常德市?|绵阳市?|荆州市?|宜昌市?|柳州市?|菏泽市?|宝鸡市?|遵义市?)/,"$1").replace(/^(北京|上海|天津|重庆|深圳|广州|杭州|成都|武汉|西安|南京|苏州|郑州|长沙|东莞|青岛|宁波|佛山|合肥|昆明|大连|福州|厦门|济南|哈尔滨|石家庄|贵阳|南昌|无锡|温州|常州|南宁|太原|长春|兰州|乌鲁木齐|呼和浩特|泉州|南通|徐州|潍坊|绍兴|台州|烟台|洛阳|珠海|金华|惠州|嘉兴|保定|中山|临沂|唐山|株洲|盐城|沧州|咸阳|衡阳|泰安|邢台|信阳|南充|莆田|漳州|镇江|襄阳|岳阳|汕头|江门|桂林|赣州|许昌|常德|绵阳|荆州|宜昌|柳州|菏泽|宝鸡|遵义)市/,"$1");
+  if(!s||s===orig)return "";   // 剥不出有效简称（短名/无法可靠派生）→ 不派生
+  if(s.length<2||s.length>=9)return "";
+  if(/公司|集团|有限|股份/.test(s))return "";
+  return s;
+}
+let autoGenTarget=null; // 记录「↻ 自动」填充的目标 input id；手动改输入后置空
+function autoFillShort(nameId,shortId){
+  const nEl=document.getElementById(nameId),sEl=document.getElementById(shortId);
+  if(!nEl||!sEl)return;
+  const d=deriveShort(nEl.value);
+  if(!d){try{showToast("未能从名称中自动生成简称，请手动填写","err");}catch(e){}return;}
+  sEl.value=d;
+  autoGenTarget=shortId;
+  try{showToast("已按名称生成简称「"+d+"」（可继续手动修改）");}catch(e){}
+}
+// 一次性迁移：无简称档案自动派生简称（autoShort 标记用于卡片「✨自动」角标；不覆盖手动设置）
+(function(){
+  try{
+    if(localStorage.getItem("wb_proj_auto_short_v1"))return;
+    let changed=false;
+    projects.forEach(p=>{
+      if(p.short&&p.short.trim())return;
+      const d=deriveShort(p.name);
+      if(d&&d!==p.name){p.short=d;p.autoShort=1;changed=true;}
+    });
+    if(changed)save(K,projects);
+    localStorage.setItem("wb_proj_auto_short_v1","1");
+  }catch(e){}
+})();
+
+function statusPill(st){return `<span class="pill ${ST[st]||'stx-pause'}">${esc(st||'未设')}</span>`;}
+function field(label,val,full){
+  if(!val||val==="/") return "";
+  return `<div class="pj-item ${full?'full':''}"><span class="k">${label}：</span><span class="v">${esc(val)}</span></div>`;
+}
+function contractBadgeStr(contract,status){
+  if(isDateStr(contract)){
+    const d=daysBetween(todayStr(),contract);
+    if(d<0 && status!=="已结束" && status!=="已暂停") return '<span class="pill badge-over">合同逾期</span>';
+    if(d>=0 && d<=90) return '<span class="pill badge-soon">90天内到期</span>';
+  }
+  if(contract && contract.indexOf("顺延")>=0) return '<span class="pill badge-auto">自动顺延</span>';
+  return "";
+}
+
+function renderSummary(){
+  const box=document.getElementById("sumStats");
+  const row=document.getElementById("sumRow");
+  const iss=document.getElementById("sumIssues");
+  const base=filterOp?projects.filter(p=>projOp(p)===filterOp):projects;
+  if(base.length===0){
+    box.innerHTML="";row.innerHTML='<div class="empty">暂无档案，添加或导入后将自动汇总。</div>';iss.innerHTML="";return;
+  }
+  const total=base.length;
+  const op={};
+  base.forEach(p=>{const k=projOp(p)||"其他";op[k]=(op[k]||0)+1;});
+  const opStr=Object.keys(op).sort().map(k=>`${k} ${op[k]}`).join(" · ")||"—";
+  const pt={};
+  const countPt=x=>{const t=x.productType||"";if(t&&t!=="/")pt[t]=(pt[t]||0)+1;};
+  base.forEach(p=>{countPt(p);(p.sub||[]).forEach(countPt);});
+  const ptStr=Object.keys(pt).map(k=>`${k} ${pt[k]}`).join(" · ")||"—";
+  let overdue=0,soon=0,auto=0;
+  base.forEach(p=>{
+    if(p.contract&&p.contract.indexOf("顺延")>=0)auto++;
+    if(isDateStr(p.contract)){const d=daysBetween(todayStr(),p.contract);if(d<0&&p.status!=="已结束"&&p.status!=="已暂停")overdue++;else if(d>=0&&d<=90)soon++;}
+  });
+  const gap=base.filter(p=>!p.contact).length;
+  const issues=base.filter(p=>(p.risk&&p.risk!=="/")||(p.todo&&p.todo!=="/"));
+
+  const scard=(key,num,label,  color)=>{
+    const active=metricFilter===key;
+    const cls="stat-card"+((key!=="all")?" clickable":"")+(active?" active":"");
+    const numStyle=color&&!active?` style="color:${color}"`:"";
+    const onClick=` onclick="setMetricFilter('${key}')"`;
+    return `<div class="${cls}"${onClick}><div class="stat-n"${numStyle}>${num}</div><div class="stat-l">${label}</div></div>`;
+  };
+  box.innerHTML=`
+    ${scard("all",total,filterOp?"筛选档案":"档案总数",null)}
+    ${scard("overdue",overdue,"合同逾期",overdue?"var(--red)":null)}
+    ${scard("soon",soon,"90天内到期",soon?"var(--amber)":null)}
+    ${scard("gap",gap,"对接人缺口",gap?"var(--red)":null)}`;
+  row.innerHTML=`
+    <div class="sum-item"><span class="k">运营商分布</span><span class="v">${opStr}</span></div>
+    <div class="sum-item"><span class="k">产品类型</span><span class="v">${ptStr}</span></div>
+    <div class="sum-item"><span class="k">合同预警</span><span class="v">年内到期 ${soon} · 自动顺延 ${auto} · 逾期 ${overdue}</span></div>`;
+  const banner=metricFilter==="all"?"":`<div class="metric-banner"><span>正在按「${metricLabel(metricFilter)}」筛选下方列表（${base.filter(p=>matchMetric(p,metricFilter)).length} 个机构）</span><a class="linkbtn" href="#" onclick="setMetricFilter('all');return false;">清除筛选</a></div>`;
+  row.innerHTML+=banner;
+  iss.innerHTML=issues.length?`<div class="issues${issuesCollapsed?" collapsed":""}">
+    <div class="iss-h coll-h ${issuesCollapsed?"":"open"}" onclick="toggleIssues()"><span>重点遗留 / 对接事项（${issues.length}）</span><span class="chev">▾</span></div>
+    <div class="issues-body">${issues.map(issRowHtml).join("")}</div>
+  </div>`:"";
+}
+
+// ---- 重点遗留 / 对接事项：折叠 / 定位 / 就地编辑 ----
+function issRowHtml(p){
+  const hasR=p.risk&&p.risk!=="/", hasT=p.todo&&p.todo!=="/";
+  const nm=esc(p.name), reg=esc(p.province||p.region||""), id=p.id;
+  if(issEditId===id){
+    return `<div class="iss-item iss-edit" data-id="${id}">
+      <div class="iss-top"><b>${nm}</b>${reg?`<span>${reg}</span>`:""}</div>
+      <div class="iss-fld"><span class="l">待处理</span><textarea id="issTodo_${id}" class="iss-ta" placeholder="当前正在对接 / 待跟进的事项">${esc(p.todo||"")}</textarea></div>
+      <div class="iss-fld"><span class="l">风险/遗留</span><textarea id="issRisk_${id}" class="iss-ta" placeholder="需重点关注的风险或遗留问题">${esc(p.risk||"")}</textarea></div>
+      <div class="iss-acts">
+        <button class="btn sm primary" onclick="issSave('${id}')">保存</button>
+        <button class="btn sm ghost" onclick="issCancel()">取消</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="iss-item" data-id="${id}" onclick="issFocus('${id}')" title="点击定位到对应档案">
+    <div class="iss-top">
+      <b>${nm}</b>${reg?`<span>${reg}</span>`:""}
+      <span class="iss-grow"></span>
+      <button class="iss-editb" title="就地编辑待处理 / 风险遗留" onclick="event.stopPropagation();issEdit('${id}')">✎ 编辑</button>
+    </div>
+    ${hasT?`<div class="iss-n t">待处理：${esc(p.todo)}</div>`:""}
+    ${hasR?`<div class="iss-n r">风险/遗留：${esc(p.risk)}</div>`:""}
+  </div>`;
+}
+function toggleIssues(){
+  issuesCollapsed=!issuesCollapsed;
+  try{localStorage.setItem("wb_proj_issues_coll",issuesCollapsed?"1":"0");}catch(e){}
+  renderSummary();
+}
+function issEdit(id){issEditId=id;renderSummary();}
+function issCancel(){issEditId=null;renderSummary();}
+function issSave(id){
+  const p=projects.find(x=>x.id===id);
+  if(!p)return;
+  const todoEl=document.getElementById("issTodo_"+id),riskEl=document.getElementById("issRisk_"+id);
+  if(todoEl)p.todo=todoEl.value.trim();
+  if(riskEl)p.risk=riskEl.value.trim();
+  issEditId=null;save(K,projects);
+  renderSummary();renderProjects();
+  try{showToast("已保存");}catch(e){}
+}
+function cardById(id){if(!id)return null;return Array.from(document.querySelectorAll(".pj-card")).find(c=>c.getAttribute("data-id")===String(id));}
+function issFocus(id){
+  const p=projects.find(x=>x.id===id);
+  if(!p)return;
+  // 点击条目 → 档案列表只看该档案（再点同一条取消）
+  soloPjId=(soloPjId===id)?null:id;
+  renderProjects();
+  if(soloPjId){
+    const card=cardById(id);
+    if(card){
+      card.classList.add("pj-spot");
+      card.classList.remove("focus-flash");void card.offsetWidth;card.classList.add("focus-flash");
+      if(card.scrollIntoView)card.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+  }
+}
+function clearSolo(){
+  soloPjId=null;
+  renderProjects();
+}
+
+function setMetricFilter(m){
+  if(m==="all") metricFilter="all";
+  else metricFilter=(metricFilter===m)?"all":m; // 再次点击同一指标则取消筛选
+  renderSummary();
+  renderProjects();
+  const list=document.getElementById("pjList");
+  if(list && list.scrollIntoView) list.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function renderFilterBar(){
+  const box=document.getElementById("relFilter");
+  if(!filterOp){box.innerHTML="";return;}
+  const n=relatedProducts(filterOp);
+  box.innerHTML=`<div class="rel-banner">
+    <span>已按运营商筛选：<b>${esc(filterOp)}</b>（${projects.filter(p=>projOp(p)===filterOp).length} 个档案）</span>
+    <span>
+      <a class="linkbtn" href="product.html?op=${encodeURIComponent(filterOp)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod','op=${encodeURIComponent(filterOp)}');return false;}">关联产品 ${n} →</a>
+      <a class="linkbtn" href="project.html" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('proj');return false;}" style="margin-left:6px;">清除筛选</a>
+    </span>
+  </div>`;
+}
+
+function renderSub(s,canEdit){
+  const acts=canEdit?`<span class="sub-head-acts">
+      <button class="icon-btn edit sm" title="编辑子项" onclick="startEditSub('${s.sid}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      <button class="icon-btn del sm" title="删除子项" onclick="delSub('${s.sid}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+    </span>`:"";
+  return `<div class="sub-item">
+    <div class="sub-head"><span class="lvl-tag sub">子项</span> ${esc(s.name||"子项")} ${s.productType&&s.productType!=="/"?`<span class="pill st-run">${esc(s.productType)}</span>`:""} ${contractBadgeStr(s.contract,"")}${acts}</div>
+    <div class="pj-grid">
+      ${field("产品类型",s.productType)}
+      ${field("合同有效期",s.contract)}
+      ${field("聚杰接口ID",s.interfaceId)}
+      ${field("结算情况",s.settleDetail)}
+      ${field("待处理",s.todo)}
+      ${field("日常对接",s.daily)}
+      ${field("对接群",s.groups,true)}
+      ${field("日常备忘",s.notes,true)}
+    </div>
+  </div>`;
+}
+
+function renderSubEdit(s){
+  const id=s.sid;
+  return `<div class="sub-item editing">
+    <div class="edit-banner sub"><span class="lvl-badge sub">子项</span> 编辑子项：${esc(s.name||"子项")}</div>
+    <div class="form-grid">
+      <div><label class="fld">名称</label><input id="sName_${id}" class="einp" value="${esc(s.name||'')}"></div>
+      <div><label class="fld">产品类型</label><input id="sProductType_${id}" class="einp" value="${esc(s.productType||'')}"></div>
+      <div><label class="fld">合同有效期</label><input id="sContract_${id}" class="einp" value="${esc(s.contract||'')}"></div>
+      <div><label class="fld">聚杰接口ID</label><input id="sIfaceId_${id}" class="einp" value="${esc(s.interfaceId||'')}"></div>
+      <div class="full"><label class="fld">结算情况</label><textarea id="sSettleDetail_${id}" class="einp">${esc(s.settleDetail||'')}</textarea></div>
+      <div class="full"><label class="fld">待处理</label><textarea id="sTodo_${id}" class="einp">${esc(s.todo||'')}</textarea></div>
+      <div class="full"><label class="fld">日常对接</label><textarea id="sDaily_${id}" class="einp">${esc(s.daily||'')}</textarea></div>
+      <div class="full"><label class="fld">对接群</label><textarea id="sGroups_${id}" class="einp">${esc(s.groups||'')}</textarea></div>
+      <div class="full"><label class="fld">日常备忘</label><textarea id="sNotes_${id}" class="einp">${esc(s.notes||'')}</textarea></div>
+    </div>
+    <div class="row-actions">
+      <button class="btn primary sm" onclick="saveEditSub('${id}')">保存子项</button>
+      <button class="btn sm del" onclick="delSub('${id}')">删除子项</button>
+      <button class="btn sm ghost" onclick="cancelEditSub()">取消</button>
+    </div>
+  </div>`;
+}
+
+function renderSubNew(pid){
+  const id="new_"+pid;
+  return `<div class="sub-item editing new">
+    <div class="edit-banner sub"><span class="lvl-badge sub">子项</span> 新增子项</div>
+    <div class="form-grid">
+      <div><label class="fld">名称 *</label><input id="snName_${pid}" class="einp" placeholder="如：电信-杭州30元20GB月包"></div>
+      <div><label class="fld">产品类型</label><input id="snProductType_${pid}" class="einp" placeholder="如：存量 / 宽带 / 权益"></div>
+      <div><label class="fld">合同有效期</label><input id="snContract_${pid}" class="einp" placeholder="如：2026-12-31 / 自动顺延"></div>
+      <div><label class="fld">聚杰接口ID</label><input id="snIfaceId_${pid}" class="einp" placeholder="账户ID"></div>
+      <div class="full"><label class="fld">结算情况</label><textarea id="snSettleDetail_${pid}" class="einp"></textarea></div>
+      <div class="full"><label class="fld">待处理</label><textarea id="snTodo_${pid}" class="einp"></textarea></div>
+      <div class="full"><label class="fld">日常对接</label><textarea id="snDaily_${pid}" class="einp"></textarea></div>
+      <div class="full"><label class="fld">对接群</label><textarea id="snGroups_${pid}" class="einp"></textarea></div>
+      <div class="full"><label class="fld">日常备忘</label><textarea id="snNotes_${pid}" class="einp"></textarea></div>
+    </div>
+    <div class="row-actions">
+      <button class="btn primary sm" onclick="saveNewSub('${pid}')">保存子项</button>
+      <button class="btn sm ghost" onclick="cancelAddSub()">取消</button>
+    </div>
+  </div>`;
+}
+
+var typeFilter=load("wb_proj_typefilter","all"); // all | agent | operator | proco
+const OP_ORDER=["电信","移动","联通","华数","其他"];
+
+function renderCard(x){
+  if(x.id===editingId){
+    const sel=(id,val,opts)=>`<select id="${id}" class="einp">${opts.map(o=>`<option value="${o}"${o===val?" selected":""}>${o}</option>`).join("")}</select>`;
+    const subsRO=(x.sub||[]).filter(s=>s.name&&s.name!=="/");
+    return `<div class="pj-card edit-main" data-name="${esc(x.name)}" data-short="${esc(x.short||'')}">
+      <div class="edit-banner main"><span class="lvl-badge main">主项</span> 编辑主项：${esc(x.name)}</div>
+      <div class="grp-title">基础信息</div>
+      <div class="form-grid">
+        <div><label class="fld">名称 / 客户 *</label><input id="eName_${x.id}" class="einp" value="${esc(x.name)}"></div>
+        <div><label class="fld">简称</label><div class="short-row"><input id="eShort_${x.id}" class="einp" value="${esc(x.short||'')}" oninput="autoGenTarget=null"><button type="button" class="btn sm ghost auto-short-btn" title="按名称自动生成简称（生成后仍可手动修改）" onclick="autoFillShort('eName_${x.id}','eShort_${x.id}')">↻ 自动</button></div></div>
+        <div><label class="fld">区域</label><input id="eRegion_${x.id}" class="einp" value="${esc(x.region||'')}"></div>
+        <div><label class="fld">当前状态</label>${sel("eStatus_"+x.id,x.status,Object.keys(ST))}</div>
+        <div><label class="fld">省份 / 运营商</label><input id="eProvince_${x.id}" class="einp" value="${esc(x.province||'')}"></div>
+        <div><label class="fld">运营商</label>${sel("eOperator_"+x.id,x.operator||"",["","电信","移动","联通","华数","其他"])}</div>
+        <div><label class="fld">项目分类</label>${sel("eType_"+x.id,x.type||"代理商",["代理商","运营商","专业公司"])}</div>
+        <div><label class="fld">产品类型</label><input id="eProductType_${x.id}" class="einp" value="${esc(x.productType||'')}"></div>
+        <div><label class="fld">聚杰接口ID</label><input id="eIfaceId_${x.id}" class="einp" value="${esc(x.interfaceId||'')}"></div>
+        <div><label class="fld">合同有效期</label><input id="eContract_${x.id}" class="einp" value="${esc(x.contract||'')}"></div>
+        <div><label class="fld">运营商对接人</label><input id="eContact_${x.id}" class="einp" value="${esc(x.contact||'')}"></div>
+        <div><label class="fld">对接部门</label><input id="eDept_${x.id}" class="einp" value="${esc(x.dept||'')}"></div>
+        <div class="full"><label class="fld">结算规则</label><input id="eSettle_${x.id}" class="einp" value="${esc(x.settle||'')}"></div>
+        <div class="full"><label class="fld">待处理事项</label><textarea id="eTodo_${x.id}" class="einp">${esc(x.todo||'')}</textarea></div>
+        <div class="full"><label class="fld">日常对接事项</label><textarea id="eDaily_${x.id}" class="einp">${esc(x.daily||'')}</textarea></div>
+        <div class="full"><label class="fld">对接群</label><textarea id="eGroups_${x.id}" class="einp">${esc(x.groups||'')}</textarea></div>
+        <div class="full"><label class="fld">日常备忘</label><textarea id="eNotes_${x.id}" class="einp">${esc(x.notes||'')}</textarea></div>
+        <div class="full"><label class="fld">结算情况</label><textarea id="eSettleDetail_${x.id}" class="einp">${esc(x.settleDetail||'')}</textarea></div>
+        <div class="full"><label class="fld">重点风险 / 遗留</label><textarea id="eRisk_${x.id}" class="einp">${esc(x.risk||'')}</textarea></div>
+      </div>
+      <div class="row-actions">
+        <button class="btn primary sm" onclick="saveEditPj('${x.id}')">保存</button>
+        <button class="btn sm ghost" onclick="cancelEditPj()">取消</button>
+      </div>
+      ${subsRO.length?`<div class="sub-block"><div class="sub-h">子项明细（${subsRO.length}）· 主项编辑中，子项仅查看</div>${subsRO.map(s=>renderSub(s,false)).join("")}</div>`:""}
+    </div>`;
+  }
+  const warn=contractBadgeStr(x.contract,x.status);
+  const subs=(x.sub||[]).filter(s=>s.name&&s.name!=="/");
+  const settle=(x.settleDetail&&x.settleDetail!=="/")?x.settleDetail:(x.settle||"");
+  const op=projOp(x);
+  const rp=relatedProducts(op,x);
+  const cat=catOf(x);
+  const catCls=cat==="代理商"?"agent":cat==="运营商"?"operator":"proco";
+  const typePill=`<span class="type-pill ${catCls}">${cat}</span>`;
+  // v2 简称：手动设置 > 自动派生；派生档案带 autoShort 标记（显示 ✨自动 角标）
+  const effShort=((x.short&&x.short.trim())||deriveShort(x.name)||"").trim();
+  const hasShort=!!(effShort&&effShort!==x.name);
+  const autoTag=(hasShort&&(!x.short||x.autoShort===1))?'<span class="pj-auto-tag" title="系统按公司名自动生成的简称，可在编辑中修改">✨自动</span>':"";
+  const actsHtml=`<div class="pj-acts">
+        ${op?`<a class="linkbtn primary" title="一键直达该机构的产品台账（按机构名匹配产品）" href="product.html?sup=${encodeURIComponent(x.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod','sup=${encodeURIComponent(x.name)}');return false;}"><span class="ico">▤</span>产品 <b>${rp}</b></a>`:""}
+        <button class="icon-btn view" title="聚合详情（档案 + 产品 + 交易数据 一屏）" onclick="openAgg('${x.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
+        <button class="icon-btn edit" title="编辑" onclick="startEditPj('${x.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="icon-btn del" title="删除" onclick="delPj('${x.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>`;
+  const titleHtml=hasShort
+    ?`<div class="pj-band"><div class="pj-band-top"><span class="pj-band-lab">简称</span>${autoTag}<span class="pj-band-pills">${statusPill(x.status)} ${warn} ${typePill}</span></div><div class="pj-band-bot"><span class="pj-short-main">${esc(effShort)}</span><span class="pj-name-sub">${esc(x.name)}</span>${actsHtml}</div></div>`
+    :`<span class="lvl-tag main">主项</span> <span>${esc(x.name)}</span> ${statusPill(x.status)} ${warn} ${typePill}`;
+  return `<div class="pj-card" data-id="${x.id}" data-name="${esc(x.name)}" data-short="${esc(effShort)}">
+    <div class="pj-head">
+      <div class="pj-title">${titleHtml}</div>
+      ${hasShort?"":actsHtml}
+    </div>
+    <div class="pj-grid">
+      ${field("区域",x.region)}
+      ${field("省份/运营商",x.province)}
+      ${field("运营商",op)}
+      ${field("产品类型",x.productType)}
+      ${field("结算规则",x.settle)}
+      ${field("聚杰接口ID",x.interfaceId)}
+      ${field("合同有效期",x.contract)}
+      ${field("运营商对接人",x.contact)}
+      ${field("对接部门",x.dept)}
+    </div>
+    ${settle?`<div class="pj-item full"><span class="k">结算情况：</span><span class="v">${esc(settle)}</span></div>`:""}
+    ${field("待处理事项",x.todo,true)}
+    ${field("日常对接事项",x.daily,true)}
+    ${field("对接群",x.groups,true)}
+    ${field("日常备忘",x.notes,true)}
+    ${(x.risk&&x.risk!=="/")?`<div class="pj-note"><div class="pn-h">重点风险 / 遗留</div><div class="pn-l">${esc(x.risk)}</div></div>`:""}
+    ${(()=>{
+      const addBtn=(editingSub||addingSubPid===x.id)?"":`<button class="btn sm ghost add-sub" onclick="addSub('${x.id}')">＋ 添加子项</button>`;
+      const newForm=addingSubPid===x.id?renderSubNew(x.id):"";
+      const list=subs.map(s=>editingSub===s.sid?renderSubEdit(s):renderSub(s,true)).join("");
+      return `<div class="sub-block"><div class="sub-h">子项明细（${subs.length}）${addBtn}</div>${newForm}${list}</div>`;
+    })()}
+  </div>`;
+}
+
+function renderProjects(){
+  const box=document.getElementById("pjList");
+  const base=filterOp?projects.filter(p=>projOp(p)===filterOp):projects;
+  const tf={all:()=>true,agent:p=>catOf(p)==="代理商",operator:p=>catOf(p)==="运营商",proco:p=>catOf(p)==="专业公司"}[typeFilter];
+  const filtered=base.filter(tf).filter(p=>matchMetric(p,metricFilter)).filter(p=>matchKw(p,kw));
+  // 条目「只看该档案」定位：soloPjId 命中时列表只显示该档案（带清除横幅）
+  let soloP=null;
+  if(soloPjId){soloP=projects.find(p=>p.id===soloPjId);if(!soloP)soloPjId=null;}
+  const shown=soloP?[soloP]:filtered;
+  document.getElementById("pjCount").textContent=shown.length;
+  if(shown.length===0){box.innerHTML='<div class="empty">'+(filterOp||typeFilter!=="all"?'当前筛选条件下暂无档案。':'暂无档案，添加或导入后将自动汇总。')+'</div>';return;}
+  const order={"筹备中":0,"进行中":1,"已上线":2,"已暂停":3,"已结束":4};
+  const sortFn=(a,b)=>(order[a.status]??9)-(order[b.status]??9)||(a.created||"").localeCompare(b.created||"");
+  const groups={};
+  shown.forEach(p=>{const k=projOp(p)||"其他";(groups[k]=groups[k]||[]).push(p);});
+  const keys=Object.keys(groups).sort((a,b)=>{
+    const ia=OP_ORDER.indexOf(a),ib=OP_ORDER.indexOf(b);
+    return ((ia<0?99:ia)-(ib<0?99:ib))||a.localeCompare(b);
+  });
+  const soloBanner=soloP?`<div class="metric-banner solo-banner"><span>已定位：<b>${esc(soloP.name)}</b> —— 列表只看该档案（再点同一条目或点清除恢复全部）</span><a class="linkbtn" href="#" onclick="clearSolo();return false;">清除定位</a></div>`:"";
+  box.innerHTML=soloBanner+keys.map(k=>{
+    const items=[...groups[k]].sort(sortFn);
+    return `<div class="op-zone">
+      <div class="op-head"><span class="op-name">${esc(k)}</span><span class="op-count">${items.length}</span></div>
+      ${items.map(renderCard).join("")}
+    </div>`;
+  }).join("");
+  if(focusName){
+    setTimeout(()=>{
+      const card=[...box.querySelectorAll(".pj-card[data-name]")].find(c=>{
+        const dn=c.getAttribute("data-name")||"",ds=c.getAttribute("data-short")||"";
+        return dn===focusName||(dn&&dn.indexOf(focusName)>=0)||(focusName.indexOf(dn)>=0&&dn.length>1)||(ds&&(ds===focusName||ds.indexOf(focusName)>=0));
+      });
+      if(card){card.classList.add("focus-flash");card.scrollIntoView({behavior:"smooth",block:"center"});}
+      else{try{showToast("未在业务档案中找到「"+focusName+"」（可能为交易数据里的供货方别名，可用搜索查找）","err");}catch(e){}}
+    },120);
+  }
+}
+
+function setTypeFilter(t){
+  typeFilter=t;
+  save("wb_proj_typefilter",t);
+  document.querySelectorAll("#typeFilterBar .chip").forEach(c=>c.classList.toggle("on",c.getAttribute("data-t")===t));
+  renderProjects();
+}
+
+// ---- 档案模糊搜索 ----
+let kw="";
+function matchKw(p,q){
+  if(!q)return true;
+  const hay=[p.name,p.short,p.province,p.region,p.operator,p.contact,p.productType,p.todo,p.notes].filter(Boolean).join(" ").toLowerCase();
+  return hay.indexOf(q.toLowerCase())>=0;
+}
+function onKwInput(){
+  kw=document.getElementById("pjSearch").value.trim();
+  document.getElementById("pjKwClear").style.display=kw?"block":"none";
+  renderProjects();
+}
+function clearKw(){
+  const inp=document.getElementById("pjSearch");
+  if(inp)inp.value="";
+  kw="";
+  const cl=document.getElementById("pjKwClear");
+  if(cl)cl.style.display="none";
+  renderProjects();
+}
+
+document.getElementById("pjForm").onsubmit=e=>{
+  e.preventDefault();
+  const name=document.getElementById("pjName").value.trim();
+  if(!name){showToast("名称不能为空","err");return;}
+  const shortVal=document.getElementById("pjShort").value.trim();
+  const isAutoShort=autoGenTarget==="pjShort";
+  autoGenTarget=null;
+  projects.push({
+    id:uid(),name,
+    type:document.getElementById("pjType").value,
+    region:document.getElementById("pjRegion").value.trim(),
+    short:shortVal,
+    ...(isAutoShort&&shortVal?{autoShort:1}:{}),
+    status:document.getElementById("pjStatus").value,
+    province:document.getElementById("pjProvince").value.trim(),
+    operator:document.getElementById("pjOperator").value,
+    productType:document.getElementById("pjProductType").value.trim(),
+    interfaceId:document.getElementById("pjIfaceId").value.trim(),
+    contract:document.getElementById("pjContract").value.trim(),
+    contact:document.getElementById("pjContact").value.trim(),
+    dept:document.getElementById("pjDept").value.trim(),
+    settle:document.getElementById("pjSettle").value.trim(),
+    todo:document.getElementById("pjTodo").value.trim(),
+    daily:document.getElementById("pjDaily").value.trim(),
+    groups:document.getElementById("pjGroups").value.trim(),
+    notes:document.getElementById("pjNotes").value.trim(),
+    settleDetail:document.getElementById("pjSettleDetail").value.trim(),
+    risk:document.getElementById("pjRisk").value.trim(),
+    sub:[],
+    created:new Date().toISOString()
+  });
+  save(K,projects);
+  e.target.reset();
+  document.getElementById("pjStatus").value="进行中";
+  document.getElementById("pjHint").textContent="已保存 ✓";
+  setTimeout(()=>document.getElementById("pjHint").textContent="信息仅保存在本机浏览器，不会上传。",2000);
+  renderAll();
+  // 保存后自动折叠，便于查看档案列表
+  const sec=document.getElementById("addSec");
+  sec.classList.add("collapsed");
+  document.getElementById("addToggle").classList.remove("open");
+  save("wb_proj_add_collapsed",true);
+};
+
+function startEditPj(id){editingSub=null;editingId=id;renderProjects();}
+function cancelEditPj(){editingId=null;renderProjects();}
+function saveEditPj(id){
+  const x=projects.find(p=>p.id===id);if(!x)return;
+  const name=document.getElementById("eName_"+id).value.trim();
+  if(!name){showToast("名称不能为空","err");return;}
+  x.name=name;
+  const prevShort=x.short||"";
+  const newShort=document.getElementById("eShort_"+id).value.trim();
+  x.short=newShort;
+  // autoShort：点「↻ 自动」生成 → 标记；手动改过简称 → 摘掉标记；简称没动 → 保持原标记
+  if(autoGenTarget==="eShort_"+id){x.autoShort=1;}
+  else if(newShort!==prevShort){delete x.autoShort;}
+  autoGenTarget=null;
+  x.region=document.getElementById("eRegion_"+id).value.trim();
+  x.status=document.getElementById("eStatus_"+id).value;
+  x.province=document.getElementById("eProvince_"+id).value.trim();
+  x.operator=document.getElementById("eOperator_"+id).value;
+  x.type=document.getElementById("eType_"+id).value;
+  x.productType=document.getElementById("eProductType_"+id).value.trim();
+  x.interfaceId=document.getElementById("eIfaceId_"+id).value.trim();
+  x.contract=document.getElementById("eContract_"+id).value.trim();
+  x.contact=document.getElementById("eContact_"+id).value.trim();
+  x.dept=document.getElementById("eDept_"+id).value.trim();
+  x.settle=document.getElementById("eSettle_"+id).value.trim();
+  x.todo=document.getElementById("eTodo_"+id).value.trim();
+  x.daily=document.getElementById("eDaily_"+id).value.trim();
+  x.groups=document.getElementById("eGroups_"+id).value.trim();
+  x.notes=document.getElementById("eNotes_"+id).value.trim();
+  x.settleDetail=document.getElementById("eSettleDetail_"+id).value.trim();
+  x.risk=document.getElementById("eRisk_"+id).value.trim();
+  editingId=null;save(K,projects);renderAll();
+}
+function startEditSub(sid){editingId=null;editingSub=sid;renderProjects();}
+function cancelEditSub(){editingSub=null;renderProjects();}
+function addSub(pid){editingId=null;editingSub=null;addingSubPid=pid;renderProjects();}
+function cancelAddSub(){addingSubPid=null;renderProjects();}
+function saveNewSub(pid){
+  const x=projects.find(p=>p.id===pid);if(!x)return;
+  const name=document.getElementById("snName_"+pid).value.trim();
+  if(!name){showToast("子项名称不能为空","err");return;}
+  x.sub=x.sub||[];
+  x.sub.push({
+    sid:uid(),
+    name,
+    productType:document.getElementById("snProductType_"+pid).value.trim(),
+    contract:document.getElementById("snContract_"+pid).value.trim(),
+    interfaceId:document.getElementById("snIfaceId_"+pid).value.trim(),
+    settleDetail:document.getElementById("snSettleDetail_"+pid).value.trim(),
+    todo:document.getElementById("snTodo_"+pid).value.trim(),
+    daily:document.getElementById("snDaily_"+pid).value.trim(),
+    groups:document.getElementById("snGroups_"+pid).value.trim(),
+    notes:document.getElementById("snNotes_"+pid).value.trim()
+  });
+  addingSubPid=null;save(K,projects);renderAll();
+}
+function delSub(sid){
+  showConfirm("确认删除该子项？此操作不可撤销。",()=>{
+    for(const p of projects){
+      if(p.sub&&p.sub.some(s=>s.sid===sid)){
+        p.sub=p.sub.filter(s=>s.sid!==sid);
+        break;
+      }
+    }
+    editingSub=null;save(K,projects);renderAll();
+  });
+}
+function saveEditSub(sid){
+  let found=null;
+  for(const p of projects){const s=(p.sub||[]).find(s=>s.sid===sid);if(s){found=s;break;}}
+  if(!found)return;
+  found.name=document.getElementById("sName_"+sid).value.trim();
+  found.productType=document.getElementById("sProductType_"+sid).value.trim();
+  found.contract=document.getElementById("sContract_"+sid).value.trim();
+  found.interfaceId=document.getElementById("sIfaceId_"+sid).value.trim();
+  found.settleDetail=document.getElementById("sSettleDetail_"+sid).value.trim();
+  found.todo=document.getElementById("sTodo_"+sid).value.trim();
+  found.daily=document.getElementById("sDaily_"+sid).value.trim();
+  found.groups=document.getElementById("sGroups_"+sid).value.trim();
+  found.notes=document.getElementById("sNotes_"+sid).value.trim();
+  editingSub=null;save(K,projects);renderAll();
+}
+
+function delPj(id){
+  const p=projects.find(x=>x.id===id);
+  showConfirm("确认删除该档案？此操作不可撤销。"+(p&&p.name?"<br>即将删除：<b>"+esc(p.name)+"</b>":""),()=>{
+    projects=projects.filter(x=>x.id!==id);
+    save(K,projects);renderAll();
+  });
+}
+
+function renderAll(){renderSummary();renderFilterBar();renderProjects();setTypeFilter(typeFilter);}
+
+// ---- 布局切换 ----
+let layoutMode=load("wb_proj_layout","narrow"); // narrow | wide
+function setLayout(m){
+  layoutMode=m;
+  document.body.classList.toggle("layout-wide",m==="wide");
+  document.body.classList.toggle("force-wide",m==="wide"); // 双列=显式强制并排（窄屏/嵌入预览也能看双栏）
+  document.getElementById("btnNarrow").classList.toggle("active",m==="narrow");
+  document.getElementById("btnWide").classList.toggle("active",m==="wide");
+  save("wb_proj_layout",m);
+  // 切换 Flex/Block 布局后强制重绘，避免部分浏览器在 iframe 内不刷新右侧列表
+  requestAnimationFrame(()=>{document.body.offsetHeight;renderAll();});
+}
+setLayout(layoutMode);
+
+// ---- 添加档案折叠 ----
+function toggleAdd(){
+  const sec=document.getElementById("addSec");
+  const collapsed=sec.classList.toggle("collapsed");
+  const t=document.getElementById("addToggle");
+  t.classList.toggle("open",!collapsed);
+  save("wb_proj_add_collapsed",collapsed);
+}
+(function initAddCollapse(){
+  const collapsed=load("wb_proj_add_collapsed",true); // 默认折叠（使用频率不高）
+  const sec=document.getElementById("addSec");
+  const t=document.getElementById("addToggle");
+  if(collapsed){sec.classList.add("collapsed");t.classList.remove("open");}
+  else{t.classList.add("open");}
+})();
+
+(function initKwSearch(){
+  const inp=document.getElementById("pjSearch");
+  if(inp)inp.addEventListener("input",onKwInput);
+})();
+
+renderAll();
+// ---- 机构聚合详情（档案 + 产品台账 + 交易摘要 一屏）----
+let _aggTx=null;
+function aggIdbGet(key){
+  return new Promise(res=>{
+    if(!window.indexedDB)return res(null);
+    try{
+      const rq=indexedDB.open("wb_workdash_db",1);
+      rq.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains("kv"))db.createObjectStore("kv");};
+      rq.onsuccess=()=>{try{const db=rq.result;const r=db.transaction("kv","readonly").objectStore("kv").get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch(e){res(null);}};
+      rq.onerror=()=>res(null);
+    }catch(e){res(null);}
+  });
+}
+async function aggLoadTx(){
+  if(_aggTx!==null)return _aggTx;
+  try{const ls=JSON.parse(localStorage.getItem("wb_workdash_tx")||"null");if(ls&&ls.supplierDay){_aggTx=ls;return ls;}}catch(e){}
+  const v=await aggIdbGet("wb_workdash_tx");
+  if(v&&v.supplierDay)_aggTx=v;else _aggTx=null;
+  return _aggTx;
+}
+function aggNameHit(full,short,q,province,operator){
+  if(!full)return false;
+  // full = 供应商名；q = 档案全名；short = 档案简称
+  if(full===q||full.indexOf(q)>=0||(q.indexOf(full)>=0&&full.length>1))return true;
+  // 简称匹配：应该是「供应商 vs 简称」互比，而不是「档案全名 vs 简称」（后者会导致简称是档案名前缀时全命中）
+  if(short&&(full===short||full.indexOf(short)>=0||short.indexOf(full)>=0))return true;
+  // 兜底：按"省+运营商"组合匹配（处理"广西电信" supplier vs "中国电信股份有限公司广西分公司" 档案不连续包含的情况）
+  if(province&&operator){
+    const combo=String(province).replace(/[省市区]$/,"")+String(operator);
+    if(combo.length>=2&&(full===combo||full.indexOf(combo)>=0||q.indexOf(combo)>=0))return true;
+  }
+  return false;
+}
+function openAgg(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  document.getElementById("aggTitle").textContent=(p.short&&p.short!==p.name)?(p.name+"（"+p.short+"）"):p.name;
+  document.getElementById("aggMask").classList.add("show");
+  document.getElementById("aggBody").innerHTML='<div class="empty">加载中…</div>';
+  renderAggBody(p);
+}
+function closeAgg(){document.getElementById("aggMask").classList.remove("show");}
+async function renderAggBody(p){
+  const name=p.name||"",short=p.short||"";
+  // 产品台账
+  let prods=[];
+  try{
+    const d=JSON.parse(localStorage.getItem("wb_product_data")||"{}");
+    const st=d.stock||[],br=d.broadband||[];
+    const hit=s=>aggNameHit(s,p.short,name,p.province,p.operator);
+    prods=[
+      ...st.filter(x=>hit(x.supplier)).map(x=>({n:x.name,meta:"存量 · ¥"+(x.amount||"")+" · "+(x.operator||"")+" · "+(x.skuStatus||x.status||"")})),
+      ...br.filter(x=>hit(x.provider)).map(x=>({n:x.name,meta:"宽带 · ¥"+(x.price||"")+" · "+(x.operator||"")+" · "+(x.shelf||"")}))
+    ];
+  }catch(e){}
+  // 交易摘要
+  const tx=await aggLoadTx();
+  let trade=null;
+  if(tx&&tx.supplierDay){
+    const hitKey=Object.keys(tx.supplierDay).find(k=>aggNameHit(k,"",name)||(short&&aggNameHit(k,"",short)));
+    if(hitKey){
+      let dev=0,unsub=0;const byMonth={};
+      for(const d in tx.supplierDay[hitKey]){const c=tx.supplierDay[hitKey][d];dev+=c.dev;unsub+=c.unsub;const m=d.slice(0,7);byMonth[m]=(byMonth[m]||0)+c.dev;}
+      const rate=dev>0?unsub/dev*100:0;
+      // 环比：当前月 vs 上一月（用 byMonth 末两个月）
+      const sorted=Object.keys(byMonth).sort();
+      const curYm=sorted.length?sorted[sorted.length-1]:"";
+      const prevYm=sorted.length>1?sorted[sorted.length-2]:"";
+      const curDev=curYm?(byMonth[curYm]||0):0;
+      const prevDev=prevYm?(byMonth[prevYm]||0):0;
+      const devHb=prevDev>0?(curDev-prevDev)/prevDev*100:(curDev>0?null:0);
+      trade={dev,unsub,rate,months:sorted,byMonth,key:hitKey,curYm,prevYm,curDev,prevDev,devHb};
+    }
+  }
+  const card=(k,v)=>`<div class="agg-f"><span class="k">${k}</span><span class="v">${v==null||v===""?"—":v}</span></div>`;
+  const escV=v=>{const s=String(v==null?"":v);return esc(s).replace(/\n/g,"<br>");};
+  const arch=`
+    <div class="agg-block">
+      <div class="agg-bh">档案信息</div>
+      <div class="agg-fields">
+        ${card("状态",statusPill(p.status))}
+        ${card("区域",p.region)}
+        ${card("省份 / 运营商",(p.province||"")+(p.operator?(" · "+p.operator):""))}
+        ${card("产品类型",p.productType)}
+        ${card("对接人",p.contact)}
+        ${card("合同有效期",p.contract)}
+        ${card("结算规则",p.settle)}
+        ${card("结算情况",p.settleDetail)}
+        ${p.todo?`<div class="agg-f col"><span class="k">待处理</span><span class="v">${escV(p.todo)}</span></div>`:""}
+        ${p.risk?`<div class="agg-f col"><span class="k">重点风险 / 遗留</span><span class="v">${escV(p.risk)}</span></div>`:""}
+      </div>
+    </div>`;
+  const prodHtml=`
+    <div class="agg-block">
+      <div class="agg-bh">名下产品（${prods.length}）<a class="linkbtn" style="float:right;" href="product.html?sup=${encodeURIComponent(p.short||name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod','sup=${encodeURIComponent(p.short||name)}');return false;}">打开产品台账 →</a></div>
+      ${prods.length?prods.slice(0,30).map(x=>`<div class="agg-prod"><b>${esc(x.n)}</b><span>${esc(x.meta)}</span></div>`).join("")+(prods.length>30?`<div class="agg-more">…共 ${prods.length} 个产品，其余请在产品台账查看</div>`:""):'<div class="empty">该机构暂无产品台账数据</div>'}
+    </div>`;
+  const hbTxt=(v,invert)=>{
+    if(v==null)return "—";
+    const up=v>=0;const cls=invert?(up?"mdown":"mup"):(up?"mup":"mdown");
+    return `<span class="${cls}">${up?"▲ +":"▼ "}${Math.abs(v).toFixed(1)}%</span>`;
+  };
+  const tradeHtml=`
+    <div class="agg-block">
+      <div class="agg-bh">交易摘要（供货方：${trade?esc(trade.key):"—"}）</div>
+      ${trade?`<div class="agg-kpis">
+          <div class="agg-kpi"><b>${fmtAgg(trade.dev)}</b><span>发展订单（笔）</span></div>
+          <div class="agg-kpi"><b>${fmtAgg(trade.unsub)}</b><span>退订数（笔）</span></div>
+          <div class="agg-kpi"><b style="color:${trade.rate>=15?'#ef4444':trade.rate>=8?'#f59e0b':'#10b981'}">${trade.rate.toFixed(2)}%</b><span>退订率</span></div>
+        </div>
+        ${trade.prevYm?`<div class="agg-hb">
+            <div class="agg-hb-row"><span class="k">当前周期</span><span class="v">${esc(trade.curYm)} · ${fmtAgg(trade.curDev)} 笔</span></div>
+            <div class="agg-hb-row"><span class="k">上一周期（环比）</span><span class="v">${esc(trade.prevYm)} · ${fmtAgg(trade.prevDev)} 笔</span></div>
+            <div class="agg-hb-row"><span class="k">发展订单环比</span><span class="v">${hbTxt(trade.devHb,false)}</span></div>
+          </div>`:""}
+        <div class="agg-trend">${trade.months.slice(-12).map(m=>`<div class="agg-tm"><span>${m}</span><b>${fmtAgg(trade.byMonth[m])}笔</b></div>`).join("")}</div>
+        <div class="agg-note">数据来自数据台导入的交易明细（${tx.meta.rows?fmtAgg(tx.meta.rows):""} 行）</div>`:
+        '<div class="empty">暂无交易数据（请先在数据台导入交易明细）</div>'}
+    </div>`;
+  document.getElementById("aggBody").innerHTML=`<div class="agg-col left">${arch}</div><div class="agg-col right">${tradeHtml}${prodHtml}</div>`;
+}
+function fmtAgg(n){return Number(n||0).toLocaleString("zh-CN");}
+</script>
+<!-- 机构聚合详情弹层（档案 + 产品台账 + 交易摘要 一屏） -->
+<div class="agg-mask" id="aggMask" onclick="if(event.target===this)closeAgg()">
+  <div class="agg-modal">
+    <div class="agg-head">
+      <span class="agg-title" id="aggTitle">机构聚合详情</span>
+      <button class="agg-close" type="button" onclick="closeAgg()" title="关闭">✕</button>
+    </div>
+    <div class="agg-body" id="aggBody"><div class="empty">加载中…</div></div>
+  </div>
+</div>
+</body>
+</html>
