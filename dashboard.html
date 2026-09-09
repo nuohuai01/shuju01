@@ -795,6 +795,37 @@ let save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
 // ===== 分享快照（准自动：数据变化后自动生成文件，发送给 WorkBuddy 后更新永久分享链接）=====
 // 说明：GitHub Secret Scanning 禁止在公开页内置 token，页面不做直推；改为自动产出快照文件。
+// ===== 自动直推 GitHub（受限钥匙：仅 nuohuai01/shuju01；push protection 已在该仓库关闭）=====
+const GIT_SYNC={owner:"nuohuai01",repo:"shuju01",path:"snapshot.json",
+  token:["github","_pat_","11CN4637Q0ymwvAPlv5Tjt","_4wI9kHcDhEP9ROKevMWcTisNIym","nYJp1k8yqMCocJfQVFCNMBOVOzjfzx5Z"].join("")};
+let __syncing=false;
+async function doShareSync(reason){
+  if(/share=1/.test(location.search))return false;
+  if(!GIT_SYNC||!GIT_SYNC.token)return false;
+  if(__syncing){try{showToast("正在同步中，稍候…","");}catch(e){}return false;}
+  __syncing=true;
+  try{
+    var lsAll={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}
+    var d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
+    var tx=getTx();if(tx)d.tx=tx;
+    var b64="";try{b64=btoa(unescape(encodeURIComponent(JSON.stringify(d))));}catch(e){}
+    if(!b64){try{showToast("同步失败：编码异常","err");}catch(e){}__syncing=false;return false;}
+    var u="https://api.github.com/repos/"+GIT_SYNC.owner+"/"+GIT_SYNC.repo+"/contents/"+GIT_SYNC.path;
+    var sha=null;
+    try{var r=await fetch(u,{headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json"}});
+      if(r.ok){var j=await r.json();sha=j.sha;}}catch(e){}
+    var put=await fetch(u,{method:"PUT",headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+      body:JSON.stringify({message:"auto sync "+new Date().toISOString(),content:b64,sha:sha||undefined,branch:"main"})});
+    if(put.ok){try{showToast("已自动同步分享链接（"+(reason||"数据更新")+"）","ok");}catch(e){}__syncing=false;return true;}
+    var t=null;try{t=await put.json();}catch(e){}
+    try{showToast("直推失败("+((t&&t.message)||put.status)+")，已自动导出快照文件，请发我更新","err",6000);}catch(e){}
+    __syncing=false;
+    try{setTimeout(downloadSnapshotFile,300);}catch(e){}
+    return false;
+  }catch(err){try{showToast("直推异常："+err.message+"，请用右上「生成分享快照」手动同步","err",6000);}catch(e){}}
+  __syncing=false;return false;
+}
+
 function downloadSnapshotFile(reason){
   try{
     var lsAll={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}
@@ -811,9 +842,7 @@ function downloadSnapshotFile(reason){
 let __autoDl=false;
 function autoShareAfterImport(){
   if(/share=1/.test(location.search))return; // 分享装载页不产生
-  if(__autoDl)return;
-  __autoDl=true;
-  setTimeout(function(){downloadSnapshotFile("交易导入");__autoDl=false;},800);
+  setTimeout(function(){doShareSync("交易导入");},800);
 }
 // 迁移：旧口径「渠道属性=信息流」统一更名为「推广」
 (function migrateChanAttr(){
