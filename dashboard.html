@@ -1793,7 +1793,16 @@ function renderTx(){
   const trendArr=Object.keys(daySrc).sort().map(d=>({label:parseInt(d.slice(8),10)+"日",val:daySrc[d]}));
   document.getElementById("txTrendCount").innerHTML=lineSVG(trendArr,"#4f46e5","笔");
   const dtEl=document.getElementById("txDailyTitle");if(dtEl)dtEl.textContent=(monthForDaily?(monthForDaily.split("-")[0]+"年"+parseInt(monthForDaily.split("-")[1],10)+"月 "):"")+"每日订单数趋势（发展订单 · 单位：笔）";
-  const monthArr=Object.keys(monthMap).sort().map(m=>({label:parseInt(m.slice(5),10)+"月",val:monthMap[m]}));
+  // 月度趋势：取全部历史月份（不依赖当前年份/月份筛选），最多展示近 12 个月
+  var allMonthMap={};
+  for(var _sp in tx.supplierDay)for(var _d in tx.supplierDay[_sp]){
+    var _c=tx.supplierDay[_sp][_d];
+    var _m=_d.slice(0,7);
+    allMonthMap[_m]=(allMonthMap[_m]||0)+_c.dev;
+  }
+  var _keys=Object.keys(allMonthMap).sort();
+  var _lastN=_keys.slice(-12);
+  var monthArr=_lastN.map(function(_m){return {label:_m.slice(0,4)+"-"+(parseInt(_m.slice(5),10))+"月",val:allMonthMap[_m]};});
   document.getElementById("txTrendMonth").innerHTML=lineSVG(monthArr,"#10b981","笔");
   // ---- 折叠模块惰性渲染（折叠中的模块跳过重算，展开时再渲染）----
   const secCollapsed=id=>{const s=document.getElementById(id);return !s||s.classList.contains("collapsed");};
