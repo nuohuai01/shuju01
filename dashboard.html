@@ -398,12 +398,10 @@ if(/share=1/.test(location.search)){(function(){
     </div>
     <div class="toolbar">
       <span class="store-flag"><span class="dot"></span>已存本地</span>
-            <button class="btn primary" id="btnShare" title="打包全部数据为快照文件；把该文件发给 WorkBuddy 即可更新各终端分享链接">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>生成分享快照
+            <button class="btn primary" id="btnShare" title="立即把最新数据同步到永久分享链接（GitHub）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>立即同步云端
       </button>
-<button class="btn" id="btnExport">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>全站备份
-      </button>
+
       <button class="btn" id="btnImport">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>全站恢复
       </button>
@@ -423,7 +421,7 @@ if(/share=1/.test(location.search)){(function(){
     </nav>
   </header>
 
-  <div class="alert" id="alert">数据已积累 30 条，建议点右上角「全站备份」留个底（含档案/产品/交易）。</div>
+  <div class="alert" id="alert">数据已积累 30 条：点右上「立即同步云端」即可把最新数据同步到永久分享链接；也可用「导出备份」留存本地。</div>
 
   <div class="main-grid">
     <div class="dash-col">
@@ -791,7 +789,16 @@ function chanInfo(party){
 }
 const load=(k,def)=>{try{return JSON.parse(localStorage.getItem(k))||def;}catch(e){return def;}};
 let userChanMap=load(KCM,{});
-let save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let save=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));maybeAutoSync(k);};
+const SYNC_KEYS=["wb_workdash_tasks","wb_workdash_metrics","wb_workdash_reports","wb_workdash_tx",
+ "wb_project_archive","wb_product_data","wb_workdash_chanmap","wb_miss_priority_v1","wb_workdash_weeklyReport"];
+let __autoSyncT=null;
+function maybeAutoSync(k){
+  if(/share=1/.test(location.search))return;
+  if(SYNC_KEYS.indexOf(String(k))<0)return;
+  clearTimeout(__autoSyncT);
+  __autoSyncT=setTimeout(function(){doShareSync("数据变更");},3000);
+}
 
 // ===== 分享快照（准自动：数据变化后自动生成文件，发送给 WorkBuddy 后更新永久分享链接）=====
 // 说明：GitHub Secret Scanning 禁止在公开页内置 token，页面不做直推；改为自动产出快照文件。
@@ -2174,34 +2181,8 @@ document.getElementById("txFile").onchange=e=>{if(e.target.files[0])handleTxFile
 dz.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)handleTxFile(f);});
 
 // ---- 备份 / 清空 ----
-document.getElementById("btnExport").onclick=()=>{
-  // 全站备份：打包所有 wb_* localStorage 键 + IndexedDB 交易数据（档案/产品/任务/指标/交易/渠道/设置）
-  const lsAll={};
-  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}}catch(e){}
-  const d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
-  const finish=()=>{
-    if(getTx())d.tx=getTx();
-    const blob=new Blob([JSON.stringify(d)],{type:"application/json"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-    a.download="数据看板全站备份_"+todayStr()+".json";a.click();URL.revokeObjectURL(a.href);
-    showToast("已导出全站备份（档案/产品台账/任务/指标/交易/渠道/设置）","ok");
-  };
-  if(!_txCache){idbGet(KTX).then(v=>{if(v)_txCache=v;finish();}).catch(()=>finish());}else{finish();}
-};
-// 生成分享快照：与全站备份同一份数据，命名与提示面向「发给 WorkBuddy 更新分享链接」
-document.getElementById("btnShare").onclick=()=>{
-  const lsAll={};
-  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}}catch(e){}
-  const d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
-  const finish=()=>{
-    if(getTx())d.tx=getTx();
-    const blob=new Blob([JSON.stringify(d)],{type:"application/json"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-    a.download="分享快照_"+todayStr()+".json";a.click();URL.revokeObjectURL(a.href);
-    showToast("分享快照已生成：请把该文件发送给 WorkBuddy，各终端链接将更新为最新数据","ok");
-  };
-  if(!_txCache){idbGet(KTX).then(v=>{if(v)_txCache=v;finish();}).catch(()=>finish());}else{finish();}
-};
+// 同步 / 恢复 / 清空
+document.getElementById("btnShare").onclick=()=>{doShareSync("手动同步");};
 document.getElementById("btnImport").onclick=()=>document.getElementById("fileInput").click();
 document.getElementById("fileInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;
