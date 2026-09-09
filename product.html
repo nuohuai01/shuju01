@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>产品台账 · 上架产品统计</title>
+<script>if(window.self!==window.top)document.documentElement.classList.add('embedded');</script>
+<script>
+  window.addEventListener("error",function(e){try{var el=document.getElementById("gErr");if(!el){el=document.createElement("div");el.id="gErr";el.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#991b1b;color:#fff;padding:9px 14px;border-radius:10px;font-size:12.5px;line-height:1.5;max-width:72vw;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none";document.body.appendChild(el);}el.textContent="页面出错："+(e.message||"未知错误")+(e.filename?"  ("+e.filename.split("/").pop()+":"+e.lineno+")":"");el.style.display="block";clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},7000);}catch(_){}});
+  function goTab(n){try{localStorage.setItem("wb_shell_tab",JSON.stringify({name:n,qs:""}));}catch(e){}if(window.parent!==window&&parent.switchTab){parent.switchTab(n);return false;}return true;}
+</script>
+<script>
+(function(){
+  function labelAll(){
+    document.querySelectorAll(".tx-table,.tbl").forEach(function(t){
+      var heads=Array.from((t.tHead&&t.tHead.rows[0]&&t.tHead.rows[0].cells)||[]).map(function(th){return (th.textContent||"").replace(/\s+/g,"").trim();});
+      Array.from(t.tBodies||[]).forEach(function(tb){
+        Array.from(tb.rows||[]).forEach(function(tr){
+          Array.from(tr.cells||[]).forEach(function(td,i){
+            if(!td.dataset.label)td.dataset.label=heads[i]||"";
+          });
+        });
+      });
+    });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",labelAll);
+  else labelAll();
+  setTimeout(labelAll,800);setTimeout(labelAll,2000);
+})();
+</script>
+
+<link rel="stylesheet" href="common.css?v=2">
+<style>
+  /* 状态切换（左右点击切换） */
+  .tg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;font-size:12px;font-weight:600;line-height:1.4;}
+  .tg-opt{padding:3px 11px;cursor:pointer;color:var(--muted);white-space:nowrap;border-right:1px solid var(--line);user-select:none;transition:background .12s;}
+  .tg-opt:last-child{border-right:none;}
+  .tg-opt:hover{background:rgba(0,0,0,.05);}
+  .tg-opt.on.st-on{background:#059669;color:#fff;border-color:#059669;}
+  .tg-opt.on.st-off{background:#dc2626;color:#fff;border-color:#dc2626;}
+  .tg-opt.on.st-wait{background:#d97706;color:#fff;border-color:#d97706;}
+  .tbl tr.off td{color:var(--muted);}
+  .tbl tr.off td:first-child{box-shadow:inset 3px 0 0 var(--red);}
+  .edit-tip{font-size:12px;color:var(--muted);margin:-6px 0 12px;display:flex;align-items:center;gap:6px;}
+  .edit-tip b{color:var(--primary);}
+  .num-in{width:100%;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;font-family:inherit;text-align:right;background:#fff;color:var(--text);box-sizing:border-box;}
+  .num-in:focus{outline:none;border-color:var(--primary);}
+  .txt-in{width:100%;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:var(--text);box-sizing:border-box;}
+  .txt-in:focus{outline:none;border-color:var(--primary);}
+  .sel-in{width:100%;max-width:none;padding:3px 6px;}
+  /* 添加/删除产品 */
+  .add-bar{display:flex;justify-content:flex-end;margin:-4px 0 10px;}
+  .btn-add{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+  .btn-add:hover{opacity:.85;}
+  .del-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;cursor:pointer;transition:background .12s;white-space:nowrap;}
+  .del-btn:hover{background:#fee2e2;}
+  .ops{display:flex;align-items:center;gap:6px;justify-content:flex-end;white-space:nowrap;}
+  .sup-label{font-size:13px;color:var(--muted);margin-right:4px;}
+  .sup-select{min-height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:13px;background:#fff;color:var(--text);max-width:380px;font-family:inherit;}
+  .sel-in{max-width:180px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:#fff;font-size:12px;font-family:inherit;color:var(--text);}
+  .sel-in:focus,.txt-in:focus,.num-in:focus{outline:none;border-color:var(--primary);}
+  .tbl.fixed{table-layout:fixed;width:100%;}
+  
+  
+  
+  
+  
+  
+  .tbl.fixed td{overflow:hidden;text-overflow:ellipsis;}
+  .tbl .sort-th{cursor:pointer;user-select:none;}
+  .tbl .sort-th:hover{background:var(--bg,#f5f7fb);}
+  .tbl .sort-arrow{color:var(--primary);font-size:11px;margin-left:2px;}
+  /* 弹窗 */
+  .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:999;}
+  .modal-mask.show{display:flex;}
+  .modal{width:min(600px,92vw);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal h3{margin:0 0 4px;font-size:16px;color:var(--text);}
+  .modal .m-desc{font-size:12px;color:var(--muted);margin:0 0 14px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .form-grid .full{grid-column:1/-1;}
+  .f-item{display:flex;flex-direction:column;gap:4px;}
+  .f-item label{font-size:12px;color:var(--muted);}
+  .f-item input,.f-item select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;width:100%;box-sizing:border-box;}
+  .f-item input:focus,.f-item select:focus{outline:none;border-color:var(--primary);}
+  .m-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  .btn-ghost{padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:13px;cursor:pointer;}
+  .btn-ghost:hover{background:#f5f5f5;}
+  .btn-ok{padding:8px 16px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-ok:hover{opacity:.9;}
+  .btn-danger{padding:8px 16px;border:none;border-radius:8px;background:#dc2626;color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-danger:hover{background:#b91c1c;}
+  .modal .warn-box{margin:10px 0 0;padding:10px 12px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;border-radius:8px;font-size:13px;line-height:1.7;}
+  .warn-box b{color:#991b1b;}
+  /* 缺品模块 */
+  .miss-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;position:relative;}
+  .miss-btn:hover{opacity:.88;}
+  .miss-btn svg{width:14px;height:14px;}
+  .miss-badge{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+  .miss-modal{width:min(1000px,96vw);}
+  .miss-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .miss-stats .ms-chip{padding:4px 10px;border-radius:999px;background:#f5f7fb;border:1px solid var(--line);font-size:12px;color:var(--muted);cursor:pointer;transition:all .12s;user-select:none;}
+  .miss-stats .ms-chip:hover{border-color:var(--primary);color:var(--primary);}
+  .miss-stats .ms-chip.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .miss-stats .ms-chip.on b{color:#fff;}
+  .miss-stats .ms-chip b{color:var(--text);}
+  .miss-stats .ms-chip.ms-warn{background:#fef2f2;border-color:#fca5a5;color:#b91c1c;}
+  .miss-stats .ms-chip.ms-warn:hover{background:#fee2e2;color:#dc2626;}
+  .miss-stats .ms-chip.ms-warn.on{background:#dc2626;border-color:#dc2626;color:#fff;}
+  .miss-stats .ms-chip.ms-warn.on b{color:#fff;}
+  .miss-tabs{display:flex;gap:6px;margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .miss-tab{padding:5px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:13px;color:var(--muted);cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:6px;}
+  .miss-tab:hover{border-color:var(--primary);color:var(--primary);}
+  .miss-tab.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600;}
+  .miss-tab .mt-n{font-size:11px;opacity:.85;font-weight:400;}
+  .miss-tab .mt-miss{font-size:11px;background:#dc2626;color:#fff;border-radius:999px;min-width:16px;height:16px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;}
+  .miss-table th{white-space:nowrap;}
+  .miss-table td{font-size:13px;}
+  .miss-table tr.miss-row{background:#fef2f2;}
+  .miss-table tr.miss-row td:first-child{box-shadow:inset 3px 0 0 #dc2626;color:#b91c1c;font-weight:600;}
+  .miss-table tr.miss-row .miss-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;vertical-align:1px;}
+  .miss-table .miss-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 8px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:12px;font-weight:700;}
+  .miss-table .miss-count.zero{background:#f3f4f6;color:#9ca3af;}
+  .miss-inp{width:100%;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:var(--text);box-sizing:border-box;}
+  .miss-inp:focus{outline:none;border-color:var(--primary);background:#fafbff;}
+  .miss-inp.slash{color:#c0c6d4;}
+  /* 缺品状态切换按钮（可点击直接切换） */
+  .miss-tog{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border:1px solid var(--line);border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;background:#f3f4f6;color:var(--muted);user-select:none;transition:all .12s;vertical-align:1px;}
+  .miss-tog:hover{border-color:var(--primary);}
+  .miss-tog.miss{background:#fef2f2;border-color:#fca5a5;color:#b91c1c;}
+  .miss-tog.miss::before{content:"●";color:#dc2626;font-size:10px;line-height:1;}
+  .miss-tog.zero::before{content:"○";color:#9ca3af;font-size:12px;line-height:1;}
+  .miss-tog.manual{border-color:#f97316;}
+  /* 弹窗底部提示 + 重置 */
+  .miss-foot{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);gap:12px;}
+  .miss-foot .hint{flex:1;line-height:1.6;}
+  .miss-foot .btn-reset{padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--muted);cursor:pointer;font-size:12px;white-space:nowrap;}
+  .miss-foot .btn-reset:hover{border-color:var(--primary);color:var(--primary);background:#fafbff;}
+  .miss-saved{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:#059669;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:10000;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .miss-saved.show{opacity:1;}
+  .miss-table td.f20-slash{color:#c0c6d4;}
+  .miss-table td.note-txt{color:#b45309;font-size:12px;}
+</style>
+
+<script>
+if(/share=1/.test(location.search)){(function(){
+  function boot(d){
+    if(!d||!d.ls)return;
+    Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);}catch(e){}});
+    var def="dashboard.html";
+    try{var u=new URL(location.href);u.searchParams.delete("share");history.replaceState(null,"",u.pathname+(u.searchParams.toString()?"?"+u.searchParams.toString():""));location.reload();}catch(e){}
+  }
+  fetch("snapshot.json?t="+Date.now()).then(function(r){if(!r.ok)throw new Error("no snapshot");return r.json();}).then(function(d){boot(d);})
+  .catch(function(){try{alert("分享数据加载失败，请确认与快照文件在同一部署目录访问。");}catch(e){}});
+})();}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+      <div>
+        <h1>上架产品台账</h1>
+        <p>新接入项目 · 存量 / 宽带上架产品统计</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn miss-btn" id="missBtn" onclick="openMiss()" title="电信/联通/移动 缺品省份优先级表（点击唤起）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        缺品<span class="miss-badge" id="missBadge">0</span>
+      </button>
+      <div class="layout-ctl" id="layoutCtl" title="切换布局">
+        <button class="btn sm" id="btnNarrow" onclick="setLayout('narrow')">单列</button>
+        <button class="btn sm" id="btnWide" onclick="setLayout('wide')">双列</button>
+      </div>
+    </div>
+    <nav class="tabs board-nav">
+      <a class="tab" href="dashboard.html" onclick="return goTab('dash')">数据看板</a>
+      <a class="tab" href="project.html" onclick="return goTab('proj')">项目档案</a>
+      <a class="tab active" href="product.html" onclick="return goTab('prod')">产品台账</a>
+    </nav>
+  </header>
+
+  <div class="main-grid">
+    <div class="dash-col">
+
+  <!-- 汇总看板 -->
+  <section class="module">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      产品汇总
+    </h2>
+    <p class="desc">源自「区域业务交接-浙江&代理商」上架产品表；可按运营商筛选，并跳转到关联的项目档案。统计基于你当前填写的上下架状态。</p>
+    <div class="stats" id="sumStats"></div>
+    <div class="sum-row" id="sumRow"></div>
+    <div id="relBanner"></div>
+  </section>
+
+  <!-- 运营商筛选 -->
+  <section class="module">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      运营商筛选
+    </h2>
+    <p class="desc">选择运营商后，下方两张表仅显示该产品线；同时可查看对应运营商的项目档案。也可按供货方筛选（来自档案/数据看板跳转）。</p>
+    <div class="filterbar" id="opFilter"></div>
+    <div class="filterbar" id="supFilter" style="margin-top:8px;"></div>
+  </section>
+
+    </div>
+    <div class="list-col">
+
+  <!-- 存量上架产品 -->
+  <section class="module">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      存量上架产品（<span id="cntStock">0</span>）
+    </h2>
+    <p class="edit-tip">🖱️ <b>SKU状态 / 权益包状态</b> 列可直接点击左右切换；下架/关闭的商品会从「在售」统计中剔除（灰色行）。</p>
+    <div class="add-bar"><button class="btn-add" onclick="openAdd('stock')">＋ 添加存量产品</button></div>
+    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><colgroup><col><col class="c-amt"><col class="c-op"><col class="c-sup"><col class="c-st"><col class="c-st"><col class="c-if"><col class="c-ops"></colgroup><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <!-- 宽带上架产品 -->
+  <section class="module">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="1"/><path d="M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3"/></svg>
+      宽带上架产品（<span id="cntBroad">0</span>）
+    </h2>
+      <p class="edit-tip">🖱️ <b>上架状态</b> 列点击左右切换（登记为上架即代表审核通过）；<b>佣金金额</b> 可直接点入修改、<b>佣金类型</b> 点击左右切换（商机单类 / 竣工类）；下架商品会从「在售」统计中剔除（灰色行）。</p>
+    <div class="add-bar"><button class="btn-add" onclick="openAdd('broad')">＋ 添加宽带产品</button></div>
+    <div class="tbl-scroll"><table class="tbl" id="tblBroad"><thead><tr><th>商品名称</th><th>服务商</th><th>运营商</th><th>速率</th><th>省</th><th>市</th><th>套餐金额</th><th>佣金金额</th><th>佣金类型</th><th>商品状态</th><th>操作</th></tr></thead><tbody></tbody></table></div>
+  </section>
+    </div>
+  </div>
+</div>
+
+<!-- 添加 / 删除弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <h3 id="mTitle">添加产品</h3>
+    <p class="m-desc" id="mDesc"></p>
+    <div class="form-grid" id="mForm"></div>
+    <div class="warn-box" id="mWarn" style="display:none"></div>
+    <datalist id="supList"></datalist>
+    <div class="m-actions">
+      <button class="btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn-ok" id="mOk" onclick="submitAdd()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 缺品优先级表弹窗 -->
+<div class="modal-mask" id="missMask" onclick="if(event.target===this)closeMiss()">
+  <div class="modal miss-modal">
+    <h3>缺品优先级表</h3>
+    <p class="m-desc">电信 / 联通 / 移动 各省份拿品优先级与佣金参考；红色高亮为缺品省份（暂无佣金参考，有品可先测试）。</p>
+    <div class="miss-stats" id="missStats"></div>
+    <div class="miss-tabs" id="missTabs"></div>
+    <div class="tbl-scroll miss-tbl"><table class="tbl miss-table" id="missTable"><thead></thead><tbody></tbody></table></div>
+    <div class="miss-foot">
+      <span class="hint">💡 顶部 <b>省份总数 / 有佣金参考 / 缺品可先测试</b> 可点击过滤；省份旁红/灰圆点可点击直接切换缺品状态（橙框=手动标记）。</span>
+      <button class="btn-reset" onclick="missResetOverride()" title="清空所有手动标记的缺品状态，恢复自动判定">↻ 重置手动标记</button>
+    </div>
+    <div class="m-actions">
+      <button class="btn-ghost" onclick="closeMiss()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 缺品模块保存提示 -->
+<div class="miss-saved" id="missSaved">✓ 已保存</div>
+
+<script src="seed-data.js"></script>
+<script>
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+// 完整产品数据持久化：首次从种子初始化（并迁移旧的状态覆盖 edits），此后增删改直接作用于该数据
+const KDATA="wb_product_data", KP="wb_product_status_edits";
+function loadData(){
+  try{
+    const raw=localStorage.getItem(KDATA);
+    if(raw){
+      const d=JSON.parse(raw);
+      if(d&&Array.isArray(d.stock)&&Array.isArray(d.broadband)){
+        mergeSeedProducts(d);
+        return d;
+      }
+    }
+  }catch(e){}
+  const d={stock:(SEED_PRODUCTS.stock||[]).map(p=>Object.assign({},p)),broadband:(SEED_PRODUCTS.broadband||[]).map(p=>Object.assign({},p))};
+  try{
+    const old=JSON.parse(localStorage.getItem(KP)||"{}")||{};
+    d.stock.forEach(p=>{const o=old["stock:"+p.offerId];if(o)Object.assign(p,o);});
+    d.broadband.forEach(p=>{const o=old["broad:"+p.productNo];if(o)Object.assign(p,o);});
+  }catch(e){}
+  saveData(d);
+  return d;
+}
+// 种子增量合并：维护已合并 offerId/productNo 列表（localStorage），每次加载只补录新增 seed；
+// 用户手动删除的种子产品（已记录在列表）不会被加回；后续新增 seed 无需升级标记版本。
+function mergeSeedProducts(d){
+  try{
+    let merged={stock:{},broad:{}};
+    try{merged=JSON.parse(localStorage.getItem("wb_prod_seed_merged")||"{}")||{};}catch(e){}
+    merged.stock=merged.stock||{};merged.broad=merged.broad||{};
+    const haveS=new Set((d.stock||[]).map(p=>p.offerId));
+    const haveB=new Set((d.broadband||[]).map(p=>p.productNo));
+    let changed=false;
+    (SEED_PRODUCTS.stock||[]).forEach(p=>{
+      if(merged.stock[p.offerId])return;
+      merged.stock[p.offerId]=1;
+      if(!haveS.has(p.offerId)){d.stock.push(Object.assign({},p));changed=true;}
+    });
+    (SEED_PRODUCTS.broadband||[]).forEach(p=>{
+      if(merged.broad[p.productNo])return;
+      merged.broad[p.productNo]=1;
+      if(!haveB.has(p.productNo)){d.broadband.push(Object.assign({},p));changed=true;}
+    });
+    if(changed)saveData(d);
+    try{localStorage.setItem("wb_prod_seed_merged",JSON.stringify(merged));}catch(e){}
+    try{localStorage.removeItem("wb_prod_seed_merged_v1");}catch(e){}
+  }catch(e){}
+}
+function saveData(d){try{localStorage.setItem(KDATA,JSON.stringify(d));}catch(e){}}
+let data=loadData();
+
+// 一次性迁移：存量产品按名称去重（保留首个，删除重复条目），兼容用户本地历史重复
+(function dedupStock(){
+  try{
+    if(localStorage.getItem("wb_prod_dedup_v1"))return;
+    const seen=new Set();let removed=0;
+    data.stock=data.stock.filter(p=>{
+      const k=(p.name||"").trim();
+      if(!k)return true;
+      if(seen.has(k)){removed++;return false;}
+      seen.add(k);return true;
+    });
+    if(removed){saveData(data);console.log("[dedup] 存量产品去重移除",removed,"条");}
+    try{localStorage.setItem("wb_prod_dedup_v1","1");}catch(e){}
+  }catch(e){}
+})();
+
+function mergedStock(){return data.stock;}
+function mergedBroad(){return data.broadband;}
+function setField(kind,key,field,val){
+  const arr=kind==="stock"?data.stock:data.broadband;
+  const p=arr.find(x=>(kind==="stock"?x.offerId:x.productNo)===key);
+  if(!p)return;
+  p[field]=val;
+  saveData(data);
+  renderAll();
+}
+function setStatus(kind,key,field,val){setField(kind,key,field,val);}
+function setNum(kind,key,field,val){setField(kind,key,field,(val||"").trim());}
+
+function prodOp(p){
+  const raw=p.operator||"";
+  if(raw.indexOf("电信")>=0) return "电信";
+  if(raw.indexOf("移动")>=0) return "移动";
+  if(raw.indexOf("联通")>=0) return "联通";
+  if(raw.indexOf("华数")>=0) return "华数";
+  const s=(p.name||"")+(p.supplier||"");
+  if(s.indexOf("电信")>=0) return "电信";
+  if(s.indexOf("移动")>=0) return "移动";
+  if(s.indexOf("联通")>=0) return "联通";
+  if(s.indexOf("华数")>=0) return "华数";
+  return "";
+}
+function relatedProjects(op){
+  if(!op) return 0;
+  // 优先读项目档案页的持久化数据（含用户新增/删除），无则回退种子
+  let proj=null;try{proj=JSON.parse(localStorage.getItem("wb_project_archive"));}catch(e){proj=null;}
+  const arr=Array.isArray(proj)?proj:(SEED_ARCHIVES||[]);
+  let n=0;
+  arr.forEach(a=>{
+    let aop=a.operator||"";
+    if(!aop){const t=(a.name||"")+(a.province||"")+(a.short||"");if(t.indexOf("电信")>=0||t.indexOf("天翼")>=0)aop="电信";else if(t.indexOf("移动")>=0)aop="移动";else if(t.indexOf("联通")>=0)aop="联通";else if(t.indexOf("华数")>=0)aop="华数";}
+    if(aop===op)n++;
+    (a.sub||[]).forEach(s=>{if(prodOp(s)===op)n++;});
+  });
+  return n;
+}
+
+let filterOp=(new URLSearchParams(location.search).get("op")||"").trim();
+let sortKey="name",sortDir="asc";
+function onSort(key){if(sortKey===key)sortDir=sortDir==="asc"?"desc":"asc";else{sortKey=key;sortDir="asc";}renderTables();}
+function sortVal(p,key){
+  switch(key){
+    case "name":return p.name||"";
+    case "amount":return parseFloat(p.amount)||0;
+    case "operator":return p.operator||"";
+    case "supplier":return p.supplier||"";
+    case "skuStatus":return p.skuStatus||"";
+    case "status":return p.status||"";
+    case "interfaceId":return p.interfaceId||"";
+    default:return "";
+  }
+}
+let filterSup=(new URLSearchParams(location.search).get("sup")||"").trim();
+// 去尾"（xxx）"括号注释，兼容 supplier 带后缀、档案 name 不带的情况
+function stripTail(s){return String(s||"").replace(/（[^）]*）?\s*$/g,"").trim();}
+function matchSup(p,sup){
+  if(!sup)return true;
+  const s=String(p.supplier||p.provider||"").trim();
+  if(!s)return true;
+  if(s===sup||s.indexOf(sup)>=0||sup.indexOf(s)>=0)return true;
+  // 去括号后双向包含（兼容"中国联合网络通信有限公司浙江省分公司（全客）" vs 档案"中国联合网络通信有限公司浙江省分公司"）
+  const s2=stripTail(s),sup2=stripTail(sup);
+  if(s2&&(s2===sup2||s2.indexOf(sup2)>=0||sup2.indexOf(s2)>=0))return true;
+  // 兜底：sup 命中某档案的 name/short/省+运 组合，则该档案的同 group 产品也算命中
+  const list=buildArchMap()&&(typeof SEED_ARCHIVES!=="undefined"?SEED_ARCHIVES:[]);
+  let archs=[];
+  try{const raw=localStorage.getItem("wb_project_archive");if(raw){const a=JSON.parse(raw);if(Array.isArray(a))archs.push(...a);}}catch(e){}
+  archs=archs.concat(list||[]);
+  for(const a of archs){
+    const aShort=a.short||"",aName=a.name||"",aProv=a.province||"",aOp=a.operator||"";
+    const aCombo=aProv?aProv.replace(/[省市区]$/,"")+aOp:"";
+    const aName2=stripTail(aName),aShort2=stripTail(aShort);
+    const supHit=sup===aShort||sup===aName||(aShort&&(sup.indexOf(aShort)>=0||aShort.indexOf(sup)>=0))||(aName&&(sup.indexOf(aName)>=0||sup2.indexOf(aName2)>=0||sup.indexOf(aName2)>=0))||(aCombo&&sup.indexOf(aCombo)>=0);
+    if(!supHit)continue;
+    if(aShort&&(s===aShort||s.indexOf(aShort)>=0||aShort.indexOf(s)>=0||s2===aShort2||(s2&&s2.indexOf(aShort2)>=0)))return true;
+    if(aName&&(s.indexOf(aName)>=0||s2.indexOf(aName2)>=0||(aName2&&s2.indexOf(aName2)>=0)))return true;
+    if(aCombo&&(s.indexOf(aCombo)>=0||s2.indexOf(aCombo)>=0))return true;
+  }
+  return false;
+}
+function supKey(p){return String(p.supplier||p.provider||"").trim();}
+const f1=p=>!filterOp||prodOp(p)===filterOp;
+const f2=p=>matchSup(p,filterSup);
+const OPS=["电信","移动","联通"];
+
+function onShelfStock(p){return p.skuStatus==="上架"&&p.status==="开启";}
+function onShelfBroad(p){return (p.shelf||"").indexOf("上架")>=0;}
+
+// 状态徽标配色
+function statusClass(v){
+  if(["上架","已上架","开启","通过","商机单类"].indexOf(v)>=0) return "st-on";
+  if(["下架","已下架","关闭"].indexOf(v)>=0) return "st-off";
+  return "st-wait";
+}
+function statusToggle(kind,key,field,val,opts){
+  let os=opts.slice();
+  if(os.indexOf(val)<0) os.unshift(val); // 保证当前值可选
+  return `<span class="tg">`+os.map(o=>`<span class="tg-opt ${o===val?("on "+statusClass(o)):""}" onclick="setStatus('${kind}','${key}','${field}','${esc(o)}')">${esc(o)}</span>`).join("")+`</span>`;
+}
+function numInput(kind,key,field,val){
+  return `<input class="num-in" type="text" inputmode="decimal" value="${esc(val)}" onchange="setNum('${kind}','${key}','${field}',this.value)">`;
+}
+function textInput(kind,key,field,val,ph){
+  return `<input class="txt-in" type="text" value="${esc(val)}" placeholder="${ph||''}" onchange="setNum('${kind}','${key}','${field}',this.value)">`;
+}
+// 运营商下拉（电信/移动/联通/华数/其他）
+function opSelect(kind,key,field,val){
+  const opts=["","电信","移动","联通","华数","其他"];
+  return `<select class="sel-in" onchange="setNum('${kind}','${key}','${field}',this.value)">`+
+    opts.map(o=>`<option value="${esc(o)}"${o===val?" selected":""}>${o||"(空)"}</option>`).join("")+
+    `</select>`;
+}
+// 供货方下拉（项目档案简称列表）：每个档案一条选项，value 优先简称、label 显示简称；按 name 去重。
+function supSelect(kind,key,val){
+  const list=[];
+  try{const raw=localStorage.getItem("wb_project_archive");if(raw){const a=JSON.parse(raw);if(Array.isArray(a))list.push(...a);}}catch(e){}
+  if(typeof SEED_ARCHIVES!=="undefined"&&Array.isArray(SEED_ARCHIVES))list.push(...SEED_ARCHIVES);
+  const seen=new Set();const opts=[];
+  list.forEach(a=>{
+    const nm=a.name||"";if(!nm||seen.has(nm))return;
+    seen.add(nm);
+    const sh=(a.short&&a.short!==nm)?a.short:"";
+    opts.push({value:sh||nm,label:sh||nm});
+  });
+  if(val&&!opts.some(o=>o.value===val)){
+    opts.unshift({value:val,label:archShortOf(val)||val});
+  }
+  return `<select class="sel-in" onchange="setNum('${kind}','${key}','supplier',this.value)" title="选择供货方（取项目档案，按简称展示）">`+
+    `<option value="">-- 选择供货方 --</option>`+
+    opts.map(o=>`<option value="${esc(o.value)}"${o.value===val?" selected":""}>${esc(o.label)}</option>`).join("")+
+    `</select>`;
+}
+
+// ---- 添加 / 删除产品 ----
+let mKind="stock",delTarget=null;
+const STOCK_FIELDS=[
+  {key:"name",label:"权益包名称",ph:"如 联通-浙江30元20GB月包",full:true},
+  {key:"amount",label:"金额（元）",ph:"如 30"},
+  {key:"operator",label:"运营商",select:["电信","移动","联通"]},
+  {key:"supplier",label:"供货方",ph:"供货方名称",full:true},
+  {key:"skuStatus",label:"SKU状态",select:["上架","下架"]},
+  {key:"status",label:"权益包状态",select:["开启","关闭"]},
+  {key:"interfaceId",label:"接口ID",ph:"如 1000450"}
+];
+const BROAD_FIELDS=[
+  {key:"name",label:"商品名称",ph:"如 杭州电信300M宽带新装一年",full:true},
+  {key:"provider",label:"服务商",ph:"如 浙江赋能"},
+  {key:"operator",label:"运营商",select:["中国电信","中国移动","中国联通"]},
+  {key:"rate",label:"速率",ph:"如 300M"},
+  {key:"province",label:"省",ph:"如 浙江"},
+  {key:"city",label:"市",ph:"如 杭州市"},
+  {key:"price",label:"套餐金额（元）",ph:"如 480.00"},
+  {key:"commission",label:"佣金金额（元）",ph:"如 40.00"},
+  {key:"commissionType",label:"佣金类型",select:["商机单类","竣工类"]},
+  {key:"shelf",label:"商品状态",select:["已上架","已下架","暂不上架"]}
+];
+function openAdd(kind){
+  mKind=kind;delTarget=null;
+  const isStock=kind==="stock";
+  const fields=isStock?STOCK_FIELDS:BROAD_FIELDS;
+  document.getElementById("mTitle").textContent=isStock?"添加存量产品":"添加宽带产品";
+  document.getElementById("mDesc").textContent=isStock?"填写以下字段后保存，新记录将出现在存量产品表中。":"填写以下字段后保存，新记录将出现在宽带上架产品表中。";
+  document.getElementById("mWarn").style.display="none";
+  document.getElementById("mForm").innerHTML=fields.map(f=>{
+    const dl=f.key==="supplier"||f.key==="provider"?' list="supList"':"";
+    return `<div class="f-item${f.full?" full":""}"><label>${f.label}</label>${f.select?`<select id="mf_${f.key}">${f.select.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select>`:`<input id="mf_${f.key}" type="text" placeholder="${esc(f.ph||"")}"${dl}>`}</div>`;
+  }).join("");
+  buildSupDatalist();
+  const ok=document.getElementById("mOk");
+  ok.textContent="保存";ok.className="btn-ok";ok.onclick=submitAdd;
+  document.getElementById("modalMask").classList.add("show");
+}
+function buildSupDatalist(){
+  const dl=document.getElementById("supList");if(!dl)return;
+  const list=[];
+  try{const raw=localStorage.getItem("wb_project_archive");if(raw){const a=JSON.parse(raw);if(Array.isArray(a))list.push(...a);}}catch(e){}
+  if(typeof SEED_ARCHIVES!=="undefined"&&Array.isArray(SEED_ARCHIVES))list.push(...SEED_ARCHIVES);
+  // 加上已存在产品中用户手动填过的供货方（用户历史输入保留为备选）
+  try{const d=JSON.parse(localStorage.getItem("wb_product_data")||"{}");[...(d.stock||[]),...(d.broadband||[])].forEach(p=>{const s=(p.supplier||p.provider||"").trim();if(s&&!list.some(a=>a.name===s||a.short===s))list.push({name:s,short:s});});}catch(e){}
+  const seen=new Set();const opts=[];
+  list.forEach(a=>{
+    const nm=a.name||"";const sh=(a.short&&a.short!==nm)?a.short:"";
+    if(sh&&!seen.has(sh)){seen.add(sh);opts.push({value:sh,label:nm});}
+    if(nm&&!seen.has(nm)){seen.add(nm);opts.push({value:nm,label:nm});}
+  });
+  dl.innerHTML=opts.map(o=>`<option value="${esc(o.value)}"${o.label&&o.label!==o.value?` label="${esc(o.label)}"`:""}></option>`).join("");
+}
+function closeModal(){document.getElementById("modalMask").classList.remove("show");}
+function submitAdd(){
+  const isStock=mKind==="stock";
+  const fields=isStock?STOCK_FIELDS:BROAD_FIELDS;
+  const obj={};
+  fields.forEach(f=>{const el=document.getElementById("mf_"+f.key);obj[f.key]=el?(el.value||"").trim():"";});
+  if(!obj.name){
+    const w=document.getElementById("mWarn");w.style.display="block";w.innerHTML="产品名称不能为空，请填写后再保存。";
+    return;
+  }
+  if(isStock){obj.offerId="new_"+Date.now();obj.skuStatus=obj.skuStatus||"上架";obj.status=obj.status||"开启";}
+  else{obj.productNo="new_"+Date.now();obj.shelf=obj.shelf||"已上架";obj.commissionType=obj.commissionType||"商机单类";obj.province=obj.province||"";}
+  (isStock?data.stock:data.broadband).push(obj);
+  saveData(data);
+  closeModal();
+  renderAll();
+  const t=document.getElementById(isStock?"tblStock":"tblBroad");
+  if(t&&t.scrollIntoView)t.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function askDel(kind,key,name){
+  delTarget={kind:kind,key:key};
+  document.getElementById("mTitle").textContent="删除产品";
+  document.getElementById("mDesc").textContent="确认删除该产品记录？";
+  document.getElementById("mForm").innerHTML="";
+  document.getElementById("mWarn").style.display="block";
+  document.getElementById("mWarn").innerHTML="即将删除：<b>"+esc(name)+"</b><br>此操作不可撤销，删除后该产品将从台账和统计中移除。";
+  const ok=document.getElementById("mOk");
+  ok.textContent="确认删除";ok.className="btn-danger";ok.onclick=confirmDel;
+  document.getElementById("modalMask").classList.add("show");
+}
+function confirmDel(){
+  if(!delTarget)return;
+  const arr=delTarget.kind==="stock"?data.stock:data.broadband;
+  const idx=arr.findIndex(x=>(delTarget.kind==="stock"?x.offerId:x.productNo)===delTarget.key);
+  if(idx>=0){arr.splice(idx,1);saveData(data);}
+  closeModal();delTarget=null;
+  renderAll();
+}
+
+function renderSummary(){
+  const stock=mergedStock(), broad=mergedBroad();
+  const baseStock=stock.filter(p=>f1(p)&&f2(p));
+  const baseBroad=broad.filter(p=>f1(p)&&f2(p));
+  const all=[...baseStock,...baseBroad];
+  const total=all.length;
+  document.getElementById("cntStock").textContent=baseStock.length;
+  document.getElementById("cntBroad").textContent=baseBroad.length;
+
+  const onShelf=all.filter(p=> onShelfStock(p)||onShelfBroad(p)).length;
+  const pct=total?Math.round(onShelf/total*100):0;
+  const opSet={};all.forEach(p=>{const o=prodOp(p);if(o)opSet[o]=(opSet[o]||0)+1;});
+
+  // 涉及机构：去重统计供货方（存量 supplier）+ 服务商（宽带 provider）
+  const instSet={};
+  baseStock.forEach(p=>{if(p.supplier)instSet[p.supplier]=1;});
+  baseBroad.forEach(p=>{if(p.provider)instSet[p.provider]=1;});
+  const instCount=Object.keys(instSet).length;
+
+  const offCount=total-onShelf;
+  document.getElementById("sumStats").innerHTML=`
+    <div class="stat-card"><div class="stat-n">${baseStock.length}</div><div class="stat-l">存量产品</div></div>
+    <div class="stat-card"><div class="stat-n">${baseBroad.length}</div><div class="stat-l">宽带产品</div></div>
+    <div class="stat-card"><div class="stat-n">${instCount}</div><div class="stat-l">涉及机构</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:${onShelf>0?'var(--green)':'var(--red)'}">${onShelf}</div><div class="stat-l">在售（${pct}%）</div></div>
+    <div class="stat-card"><div class="stat-n" style="color:${offCount>0?'var(--amber)':'var(--muted)'}">${offCount}</div><div class="stat-l">下架/未售</div></div>`;
+  document.getElementById("sumRow").innerHTML=`
+    <div class="sum-item"><span class="k">运营商分布</span><span class="v">${Object.keys(opSet).sort().map(k=>k+" "+opSet[k]).join(" · ")||"—"}</span></div>
+    <div class="sum-item"><span class="k">涉及机构</span><span class="v">${Object.keys(instSet).sort().join(" · ")||"—"}</span></div>`;
+
+  const ban=document.getElementById("relBanner");
+  if(filterOp||filterSup){
+    const parts=[];
+    if(filterOp)parts.push(`运营商：<b>${esc(filterOp)}</b>`);
+    if(filterSup)parts.push(`供货方：<b>${esc(filterSup)}</b>`);
+    ban.innerHTML=`<div class="rel-banner">
+      <span>已按 ${parts.join(" · ")} 筛选（${total} 个产品，在售 ${onShelf}）</span>
+      <span>
+        ${filterOp?`<a class="linkbtn" href="project.html?op=${encodeURIComponent(filterOp)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('proj','op=${encodeURIComponent(filterOp)}');return false;}">关联项目 ${relatedProjects(filterOp)} →</a>`:""}
+        <a class="linkbtn" href="product.html" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod');return false;}" style="margin-left:6px;">清除筛选</a>
+      </span>
+    </div>`;
+  }else{
+    ban.innerHTML=`<div class="rel-banner"><span>按运营商 / 供货方查看上架产品，并关联到对应项目档案</span><a class="linkbtn board-nav" href="project.html" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('proj');return false;}">查看全部项目档案 →</a></div>`;
+  }
+}
+
+function goSup(v){
+  const u=new URLSearchParams(location.search);u.delete("op");
+  if(v)u.set("sup",v);else u.delete("sup");
+  const q=u.toString();
+  if(window.parent!==window&&parent.switchTab){parent.switchTab("prod",q?q:"");return;}
+  location.href="product.html"+(q?"?"+q:"");
+}
+// 供货方 → 档案简称映射（合并 SEED_ARCHIVES + localStorage 项目档案，匹配显示 short 或档案名）
+let _archMap=null;
+function buildArchMap(){
+  if(_archMap)return _archMap;
+  const list=[];
+  try{const raw=localStorage.getItem("wb_project_archive");if(raw){const a=JSON.parse(raw);if(Array.isArray(a))list.push(...a);}}catch(e){}
+  if(typeof SEED_ARCHIVES!=="undefined"&&Array.isArray(SEED_ARCHIVES))list.push(...SEED_ARCHIVES);
+  const m=new Map();
+  list.forEach(p=>{const nm=p.name||"";if(!nm)return;const sh=(p.short&&p.short!==nm)?p.short:"";m.set(nm,sh);});
+  _archMap=m;
+  return m;
+}
+function archShortOf(s){
+  if(!s)return "";
+  const map=buildArchMap();
+  if(map.has(s))return map.get(s)||s;
+  for(const [k,v] of map){
+    if(k.length>=2&&(s.indexOf(k)>=0||k.indexOf(s)>=0))return v||k;
+    if(v&&(s===v||s.indexOf(v)>=0||v.indexOf(s)>=0))return v;
+  }
+  return s;
+}
+function renderFilter(){
+  const box=document.getElementById("opFilter");
+  const src=[...data.stock,...data.broadband];
+  const mk=(op,label)=>{
+    const href="product.html"+(op?"?op="+encodeURIComponent(op):"");
+    const cls=filterOp===op?"active":"";
+    const arg=op?(",'op="+encodeURIComponent(op)+"'"):"";
+    const onClick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod'"+arg+");return false;}";
+    return '<a class="tab '+cls+'" href="'+href+'" onclick="'+onClick+'">'+label+'</a>';
+  };
+  box.innerHTML=mk("","全部")+OPS.map(o=>mk(o,o+" ("+src.filter(p=>prodOp(p)===o).length+")")).join("");
+  const sbox=document.getElementById("supFilter");
+  if(sbox){
+    const sups=[...new Set(src.map(supKey).filter(s=>s))].sort();
+    sbox.innerHTML=`<span class="sup-label">供货方：</span>`+(sups.length?`<select class="sup-select" onchange="goSup(this.value)">
+      <option value="">全部</option>
+      ${sups.map(s=>`<option value="${esc(s)}"${filterSup===s?" selected":""}>${esc(s)}</option>`).join("")}
+    </select>`:`<span style="color:var(--muted);font-size:13px;">暂无产品数据</span>`)+`${filterSup?`<a class="linkbtn" href="product.html" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('prod');return false;}" style="margin-left:8px;">清除供货方筛选</a>`:""}`;
+  }
+}
+
+function renderTables(){
+  const stock=mergedStock(), broad=mergedBroad();
+  const cmp=(a,b)=>{
+    const va=sortVal(a,sortKey),vb=sortVal(b,sortKey);
+    if(typeof va==="number"&&typeof vb==="number") return sortDir==="asc"?va-vb:vb-va;
+    const r=String(va).localeCompare(String(vb),"zh");
+    return sortDir==="asc"?r:-r;
+  };
+  const bs=stock.filter(p=>f1(p)&&f2(p)).sort(cmp);
+  const bb=broad.filter(p=>f1(p)&&f2(p));
+  // 更新表头排序箭头
+  document.querySelectorAll("#tblStock .sort-th").forEach(th=>{
+    const k=th.getAttribute("data-key");
+    const ar=th.querySelector(".sort-arrow");
+    if(k===sortKey)ar.textContent=sortDir==="asc"?" ▲":" ▼";
+    else ar.textContent="";
+  });
+  document.querySelector("#tblStock tbody").innerHTML=bs.map(p=>`<tr class="${onShelfStock(p)?'':'off'}">
+    <td>${textInput("stock",p.offerId,"name",p.name,"产品名称")}</td><td class="amt">${numInput("stock",p.offerId,"amount",p.amount)}</td><td>${opSelect("stock",p.offerId,"operator",p.operator)}</td>
+    <td>${supSelect("stock",p.offerId,p.supplier)}</td>
+    <td>${statusToggle("stock",p.offerId,"skuStatus",p.skuStatus,["上架","下架"])}</td>
+    <td>${statusToggle("stock",p.offerId,"status",p.status,["开启","关闭"])}</td>
+    <td>${textInput("stock",p.offerId,"interfaceId",p.interfaceId,"接口ID")}</td>
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+  document.querySelector("#tblBroad tbody").innerHTML=bb.map(p=>`<tr class="${onShelfBroad(p)?'':'off'}">
+    <td>${esc(p.name)}</td><td title="${esc(p.provider)}">${esc(archShortOf(p.provider))}</td><td>${esc(p.operator)}</td>
+    <td>${esc(p.rate)}</td><td>${textInput("broad",p.productNo,"province",p.province||"","省")}</td><td>${esc(p.city)}</td>
+    <td class="amt">${esc(p.price)}</td>
+    <td>${numInput("broad",p.productNo,"commission",p.commission)}</td>
+    <td>${statusToggle("broad",p.productNo,"commissionType",p.commissionType||"商机单类",["商机单类","竣工类"])}</td>
+    <td>${statusToggle("broad",p.productNo,"shelf",p.shelf,["已上架","已下架","暂不上架"])}</td>
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+}
+
+// ---- 布局切换（单列 / 双列）----
+let layoutMode=(()=>{try{return localStorage.getItem("wb_prod_layout")||"narrow";}catch(e){return "narrow";}})();
+function setLayout(m){
+  layoutMode=m;
+  document.body.classList.toggle("layout-wide",m==="wide");
+  document.getElementById("btnNarrow").classList.toggle("active",m==="narrow");
+  document.getElementById("btnWide").classList.toggle("active",m==="wide");
+  try{localStorage.setItem("wb_prod_layout",m);}catch(e){}
+}
+setLayout(layoutMode);
+
+function renderAll(){renderSummary();renderFilter();renderTables();}
+try{renderAll();}
+catch(e){
+  console.error("产品台账渲染失败：",e);
+  var eb=document.getElementById("relBanner")||document.body;
+  eb.insertAdjacentHTML("beforeend",'<div style="margin:10px 0;padding:12px 14px;border:1px solid #fca5a5;background:#fef2f2;color:#b91c1c;border-radius:10px;font-size:13px;"><b>页面渲染出错：</b>'+(e&&e.message?e.message:e)+'<br><span style="color:#7f1d1d">请按 F12 打开控制台把完整报错发我。</span></div>');
+}
+
+// ================= 缺品模块（电信/联通/移动 缺品优先级表，点击唤起） =================
+// 数据源：电信联通移动缺品优先级表.xlsx（电信28行 / 联通28行 / 移动30行）；f20/f30 为佣金参考，"/"=暂无参考，null=未填（缺品）
+const MISS_PRIORITY=[
+ {op:"电信",prov:"辽宁",f20:"17",f30:"22",note:""},
+ {op:"电信",prov:"云南",f20:"18-20",f30:"25",note:""},
+ {op:"电信",prov:"陕西",f20:"17-18",f30:"25",note:""},
+ {op:"电信",prov:"江西",f20:"16-18",f30:"20-25",note:""},
+ {op:"电信",prov:"四川",f20:"18",f30:"20",note:""},
+ {op:"电信",prov:"山东",f20:"18-20",f30:"25",note:""},
+ {op:"电信",prov:"安徽",f20:"15",f30:"20",note:""},
+ {op:"电信",prov:"福建",f20:"18-20",f30:"22-25",note:""},
+ {op:"电信",prov:"湖北",f20:"15",f30:"20",note:""},
+ {op:"电信",prov:"贵州",f20:"16",f30:"20",note:""},
+ {op:"电信",prov:"河北",f20:"15",f30:"20",note:""},
+ {op:"电信",prov:"甘肃",f20:"20",f30:"25",note:""},
+ {op:"电信",prov:"内蒙古",f20:"20",f30:"25",note:""},
+ {op:"电信",prov:"吉林",f20:"17",f30:"20-25",note:""},
+ {op:"电信",prov:"黑龙江",f20:"17",f30:"20-25",note:""},
+ {op:"电信",prov:"新疆",f20:"22",f30:"30",note:""},
+ {op:"电信",prov:"湖南",f20:"16-18",f30:"20-25",note:""},
+ {op:"电信",prov:"广西",f20:"32",f30:"/",note:""},
+ {op:"电信",prov:"江苏",f20:null,f30:null,note:"缺品，有品就可以先测试"},
+ {op:"电信",prov:"浙江",f20:null,f30:null,note:""},
+ {op:"电信",prov:"河南",f20:"20",f30:null,note:""},
+ {op:"电信",prov:"西藏",f20:"20",f30:"/",note:""},
+ {op:"电信",prov:"宁夏",f20:"20",f30:"/",note:""},
+ {op:"电信",prov:"天津",f20:"20",f30:"/",note:""},
+ {op:"电信",prov:"山西",f20:"20",f30:"/",note:""},
+ {op:"电信",prov:"海南",f20:"25",f30:"/",note:""},
+ {op:"电信",prov:"广东",f20:"35",f30:"/",note:""},
+ {op:"电信",prov:"青海",f20:"18-20",f30:"25",note:""},
+ {op:"联通",prov:"辽宁",f20:"20",f30:"/",note:""},
+ {op:"联通",prov:"吉林",f20:"20",f30:"/",note:""},
+ {op:"联通",prov:"河北",f20:"15",f30:"/",note:""},
+ {op:"联通",prov:"山东",f20:"12",f30:"15",note:""},
+ {op:"联通",prov:"新疆",f20:"15",f30:"25",note:""},
+ {op:"联通",prov:"湖南",f20:"20",f30:"25",note:""},
+ {op:"联通",prov:"湖北",f20:"20",f30:"25",note:""},
+ {op:"联通",prov:"浙江",f20:"15",f30:"20",note:""},
+ {op:"联通",prov:"上海",f20:"25",f30:"30",note:""},
+ {op:"联通",prov:"重庆",f20:"20",f30:"25",note:""},
+ {op:"联通",prov:"云南",f20:"20",f30:null,note:"缺品，有品就可以先测试"},
+ {op:"联通",prov:"陕西",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"四川",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"内蒙古",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"黑龙江",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"安徽",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"贵州",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"甘肃",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"青海",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"河南",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"西藏",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"宁夏",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"天津",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"山西",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"广西",f20:"20",f30:null,note:""},
+ {op:"联通",prov:"江西",f20:"25",f30:null,note:""},
+ {op:"联通",prov:"江苏",f20:"25",f30:null,note:""},
+ {op:"联通",prov:"海南",f20:"25",f30:null,note:""},
+ {op:"移动",prov:"西藏",f20:"25",f30:null,note:""},
+ {op:"移动",prov:"新疆",f20:"25",f30:null,note:""},
+ {op:"移动",prov:"陕西",f20:"20",f30:null,note:""},
+ {op:"移动",prov:"湖北",f20:"20",f30:null,note:""},
+ {op:"移动",prov:"广西",f20:"20",f30:null,note:""},
+ {op:"移动",prov:"甘肃",f20:"20",f30:null,note:""},
+ {op:"移动",prov:"山东",f20:"20",f30:null,note:""},
+ {op:"移动",prov:"湖南",f20:"18",f30:null,note:""},
+ {op:"移动",prov:"云南",f20:"15",f30:null,note:""},
+ {op:"移动",prov:"内蒙古",f20:null,f30:null,note:"缺品，有品就可以先测试"},
+ {op:"移动",prov:"辽宁",f20:null,f30:null,note:""},
+ {op:"移动",prov:"江西",f20:null,f30:null,note:""},
+ {op:"移动",prov:"四川",f20:null,f30:null,note:""},
+ {op:"移动",prov:"吉林",f20:null,f30:null,note:""},
+ {op:"移动",prov:"黑龙江",f20:null,f30:null,note:""},
+ {op:"移动",prov:"安徽",f20:null,f30:null,note:""},
+ {op:"移动",prov:"福建",f20:null,f30:null,note:""},
+ {op:"移动",prov:"贵州",f20:null,f30:null,note:""},
+ {op:"移动",prov:"青海",f20:null,f30:null,note:""},
+ {op:"移动",prov:"河北",f20:null,f30:null,note:""},
+ {op:"移动",prov:"江苏",f20:null,f30:null,note:""},
+ {op:"移动",prov:"浙江",f20:null,f30:null,note:""},
+ {op:"移动",prov:"河南",f20:null,f30:null,note:""},
+ {op:"移动",prov:"宁夏",f20:null,f30:null,note:""},
+ {op:"移动",prov:"天津",f20:null,f30:null,note:""},
+ {op:"移动",prov:"山西",f20:null,f30:null,note:""},
+ {op:"移动",prov:"海南",f20:null,f30:null,note:""},
+ {op:"移动",prov:"广东",f20:null,f30:null,note:""},
+ {op:"移动",prov:"重庆",f20:null,f30:null,note:""},
+ {op:"移动",prov:"上海",f20:"/",f30:null,note:""}
+];
+let missCur="电信";
+let missFilter="all";   // all | ref | miss  顶部 chip 过滤
+// 运行时可变数据（首次从种子加载，后续从 localStorage 覆盖；用户编辑后实时写回）
+const MISS_KEY="wb_miss_priority_v1";
+let missData=loadMissData();
+function loadMissData(){
+  try{
+    const raw=localStorage.getItem(MISS_KEY);
+    if(raw){const a=JSON.parse(raw);if(Array.isArray(a)&&a.length===MISS_PRIORITY.length){return a.map(x=>({op:x.op,prov:x.prov,f20:x.f20==null?null:x.f20,f30:x.f30==null?null:x.f30,note:x.note||"",manualMiss:x.manualMiss===true||x.manualMiss===false?x.manualMiss:undefined}));}}
+  }catch(e){}
+  return MISS_PRIORITY.map(x=>({op:x.op,prov:x.prov,f20:x.f20==null?null:x.f20,f30:x.f30==null?null:x.f30,note:x.note||""}));
+}
+function saveMissData(){
+  try{
+    localStorage.setItem(MISS_KEY,JSON.stringify(missData.map(x=>({op:x.op,prov:x.prov,f20:x.f20,f30:x.f30,note:x.note,manualMiss:x.manualMiss===true||x.manualMiss===false?x.manualMiss:undefined}))));
+  }catch(e){}
+}
+// manualMiss 手动覆盖优先；未标记走自动（f20 空 OR 备注含"缺品"）
+function missIsMissing(r){
+  if(r&&r.manualMiss===true)return true;
+  if(r&&r.manualMiss===false)return false;
+  const v=r&&r.f20;
+  return !!((r&&r.note&&String(r.note).indexOf("缺品")>=0)||v==null||v==="");
+}
+function missList(op){return missData.filter(r=>r.op===op);}
+function missCount(op){return missList(op).filter(missIsMissing).length;}
+function missStatsHtml(op){
+  const list=missList(op),miss=missCount(op);
+  const chip=(key,label,n,warnCls)=>{
+    const on=missFilter===key;
+    return `<span class="ms-chip ${on?"on":""}${warnCls?" "+warnCls:""}" data-f="${key}" onclick="missFilterSet('${key}')">${label} <b>${n}</b></span>`;
+  };
+  return chip("all","省份总数",list.length,"")+chip("ref","有佣金参考",list.length-miss,"")+chip("miss","缺品可先测试",miss,"ms-warn");
+}
+function missFilterSet(f){missFilter=f;renderMiss();}
+function missTabsHtml(){
+  const ops=["电信","联通","移动"];
+  return ops.map(op=>`<span class="miss-tab${op===missCur?" on":""}" onclick="missTab('${op}')">${op}<span class="mt-n">${missList(op).length}省</span>${missCount(op)?`<span class="mt-miss">${missCount(op)}</span>`:""}</span>`).join("");
+}
+function missVal(v){
+  if(v==null||v==="")return "—";
+  if(v==="/")return `<span class="f20-slash">/</span>`;
+  return esc(v);
+}
+function missStrip(s){return String(s||"").replace(/[省市区]$/,"").trim();}
+function missProdCount(op,prov){
+  // 合并 SEED_ARCHIVES + localStorage wb_project_archive
+  const archs=[];
+  try{if(typeof SEED_ARCHIVES!=="undefined"&&Array.isArray(SEED_ARCHIVES))archs.push(...SEED_ARCHIVES);}catch(e){}
+  try{const raw=localStorage.getItem("wb_project_archive");if(raw){const a=JSON.parse(raw);if(Array.isArray(a))archs.push(...a);}}catch(e){}
+  const provNo=missStrip(prov);
+  const matched=archs.filter(a=>missStrip(a.province||"")===provNo && a.operator===op);
+  if(!matched.length)return 0;
+  const supSet=new Set();
+  matched.forEach(a=>{if(a.short)supSet.add(a.short);if(a.name)supSet.add(a.name);});
+  const sups=[...supSet];
+  const stock=(typeof data!=="undefined"&&data&&Array.isArray(data.stock))?data.stock:[];
+  return stock.filter(p=>{
+    if(!p.supplier||!p.operator)return false;
+    if(p.operator!==op)return false;
+    if(p.skuStatus!=="上架"||p.status!=="开启")return false;
+    return sups.some(s=>p.supplier.indexOf(s)>=0||s.indexOf(p.supplier)>=0);
+  }).length;
+}
+function missCountBadge(op,prov){
+  const n=missProdCount(op,prov);
+  return `<span class="miss-count${n===0?" zero":""}" title="${op}-${prov} 当前上线产品 ${n} 个">${n}</span>`;
+}
+function missInpHtml(op,prov,key,val){
+  const v=val==null?"":val;
+  const slash=v==="/"?" slash":"";
+  return `<input class="miss-inp${slash}" data-op="${esc(op)}" data-prov="${esc(prov)}" data-key="${key}" value="${esc(v)}" onchange="missSave(this)" placeholder="数字/区间/" title="直接编辑：数字、18-20、区间">`;
+}
+function missSave(el){
+  const op=el.getAttribute("data-op"),prov=el.getAttribute("data-prov"),key=el.getAttribute("data-key");
+  let v=el.value;
+  // 仅 f20/f30 把空串视为 null（保持"无佣金参考"语义）；note 保留 ""，方便用户区分清空与未填
+  if((key==="f20"||key==="f30") && v==="") v=null;
+  const row=missData.find(r=>r.op===op&&r.prov===prov);
+  if(!row)return;
+  row[key]=v;
+  saveMissData();
+  // 同步刷新：行高亮、统计、徽标、tab 角标
+  renderMiss();
+  missInit();
+  missToast();
+}
+let missToastT=null;
+function missToast(){
+  const t=document.getElementById("missSaved");
+  if(!t)return;
+  t.classList.add("show");
+  clearTimeout(missToastT);
+  missToastT=setTimeout(()=>t.classList.remove("show"),1200);
+}
+function missToggleHtml(op,r){
+  const miss=missIsMissing(r);
+  const manual=r&&(r.manualMiss===true||r.manualMiss===false);
+  const cls=`miss-tog ${miss?"miss":"zero"}${manual?" manual":""}`;
+  const tip=manual?(r.manualMiss?"手动标记为缺品，点击取消":"手动标记为有品，点击恢复"):(miss?"自动判定为缺品，点击标记取消":"自动判定为有品，点击标记");
+  return `<span class="${cls}" data-op="${esc(op)}" data-prov="${esc(r.prov)}" onclick="missToggle(this)" title="${tip}">${miss?"缺品":"未缺品"}</span>`;
+}
+function missToggle(el){
+  const op=el.getAttribute("data-op"),prov=el.getAttribute("data-prov");
+  const row=missData.find(r=>r.op===op&&r.prov===prov);
+  if(!row)return;
+  const cur=missIsMissing(row);
+  // 当前是缺品 → 标记为非缺品；当前非缺品 → 标记为缺品
+  row.manualMiss=!cur;
+  saveMissData();
+  renderMiss();
+  missInit();
+  missToast();
+}
+function missResetOverride(){
+  if(!confirm("确认清空所有手动标记的缺品状态，恢复自动判定（f20 空 OR 备注含缺品）？"))return;
+  missData.forEach(r=>{r.manualMiss=undefined;});
+  saveMissData();
+  renderMiss();
+  missInit();
+  missToast();
+}
+function missTableBody(op,has30){
+  let rows=missList(op);
+  if(missFilter==="miss")rows=rows.filter(missIsMissing);
+  else if(missFilter==="ref")rows=rows.filter(r=>!missIsMissing(r));
+  if(!rows.length)return `<tr><td colspan="${has30?5:4}" style="text-align:center;color:var(--muted);padding:24px 0;">该筛选下无省份</td></tr>`;
+  return rows.map(r=>{
+    const miss=missIsMissing(r);
+    const cntHtml=missCountBadge(op,r.prov);
+    const noteInp=`<input class="miss-inp" data-op="${esc(op)}" data-prov="${esc(r.prov)}" data-key="note" value="${esc(r.note||"")}" onchange="missSave(this)" placeholder="可填备注（如：缺品，有品可先测试）">`;
+    return `<tr class="${miss?"miss-row":""}"><td>${esc(r.prov)} ${missToggleHtml(op,r)}</td><td>${cntHtml}</td><td>${missInpHtml(op,r.prov,"f20",r.f20)}</td>${has30?`<td>${missInpHtml(op,r.prov,"f30",r.f30)}</td>`:""}<td>${noteInp}</td></tr>`;
+  }).join("");
+}
+function renderMiss(){
+  const s=document.getElementById("missStats"),t=document.getElementById("missTabs");
+  if(!s||!t)return;
+  s.innerHTML=missStatsHtml(missCur);
+  t.innerHTML=missTabsHtml();
+  const tab=document.getElementById("missTable");
+  const has30=missCur!=="移动";
+  tab.querySelector("thead").innerHTML=`<tr><th>省份</th><th>已上线产品数</th><th>20元以内资费佣金参考</th>${has30?"<th>30元以内资费参考佣金</th>":""}<th>备注</th></tr>`;
+  tab.querySelector("tbody").innerHTML=missTableBody(missCur,has30);
+}
+function openMiss(){
+  const m=document.getElementById("missMask");
+  if(m){m.classList.add("show");renderMiss();}
+}
+function closeMiss(){
+  const m=document.getElementById("missMask");
+  if(m)m.classList.remove("show");
+}
+function missTab(op){missCur=op;renderMiss();}
+function missInit(){
+  const n=missData.filter(missIsMissing).length;
+  const b=document.getElementById("missBadge");
+  if(b){b.textContent=n;b.title=n+" 个缺品省份（有品可先测试）";}
+}
+missInit();
+</script>
+</body>
+</html>
