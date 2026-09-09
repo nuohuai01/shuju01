@@ -1714,6 +1714,29 @@ function dimByScope(dayMap){
   for(const d in dayMap){if(!inScope(d))continue;for(const k in dayMap[d])m[k]=(m[k]||0)+dayMap[d][k];}
   return m;
 }
+// 产品分析表 4 列点击排序
+let prodSortKey="rate",prodSortDir="desc";
+function onSortProduct(k){
+  if(prodSortKey===k){prodSortDir=prodSortDir==="asc"?"desc":"asc";}
+  else{prodSortKey=k;prodSortDir="asc";}
+  renderTx();
+  setTimeout(refreshProductSortArrows,0);
+}
+
+function refreshProductSortArrows(){
+  var spans=document.querySelectorAll("#txProdTable .sort-arrow");
+  var map={"name":"包名","dev":"订单量","unsub":"退订数","rate":"退订率"};
+  spans.forEach(function(s){
+    var th=s.parentNode;
+    var k=th&&th.getAttribute("data-key");
+    if(!k)return;
+    s.textContent=prodSortKey===k?(prodSortDir==="asc"?" ▲":" ▼"):"";
+  });
+  // 同步更新本地数据台区（如"最近日期"列表）的排序显示
+  var spansD=document.querySelectorAll("#txSupTable .sort-arrow, #txProv .sort-arrow, #txCh .sort-arrow, #txTypeTable .sort-arrow, #txAttrTable .sort-arrow");
+  // 暂只维护产品分析
+}
+
 function renderTx(){
   if(supFocus){const _s=document.getElementById("txSup");if(_s&&_s.classList.contains("collapsed")){_s.classList.remove("collapsed");}}
   const tx=getTx(),meta=document.getElementById("txMeta");
@@ -1854,7 +1877,7 @@ function renderSupplier(tx,preSup,prePeriods){
   const moreRow=rows.length>50&&!supShowAll?`<tr><td colspan="5" style="text-align:center;padding:8px"><span class="tx-note">共 ${rows.length} 个供货方，当前仅显示按发展订单数排序的前 50 个</span> <button class="btn sm ghost" type="button" onclick="supShowAll=true;renderTx();">显示全部</button></td></tr>`:"";
   boxT.innerHTML=`<thead><tr><th>供货方</th><th>发展订单<span class="u">（笔）</span></th><th>环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th></tr></thead><tbody>`+
     limited.map(r=>{const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');const rc=r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981';const wpct=maxDev>0?Math.round(r.dev/maxDev*100):0;const hit=supHit(r.sp);
-      return `<tr class="${hit?'sup-hit':''}"><td class="nm">${archiveLink(r.sp)}</td><td><span class="cell-bar"><span class="cbfill"><i style="width:${wpct}%"></i></span><span class="cbval">${fmt(r.dev)}</span></span></td><td class="${hbCls}">${hbTxt}</td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${rc}">${r.rate.toFixed(2)}%</td></tr>`;}).join("")+moreRow+`</tbody>`;
+      return `<tr class="${hit?'sup-hit':''}"><td class="nm">${archiveLink(r.sp)}</td><td><span class="cell-bar"><span class="cbfill"><i style="width:${wpct}%"></i></span><span class="cbval">${fmt(r.dev)}</span></span></td><td class="${hbCls}">${hbTxt}</td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${rc}">${r.rate.toFixed(2)}%</td></tr>`;}).join("")+moreRow+`</tbody>`;refreshProductSortArrows();
   if(supFocus&&!__supScrolled){
     __supScrolled=true;
     const el=boxT.querySelector("tr.sup-hit .lnk");
@@ -1889,7 +1912,11 @@ function renderProduct(tx){
   } else {
     for(const pn in tx.productMonth)for(const m of inMonths){const pm=tx.productMonth[pn][m];if(!pm)continue;agg[pn]=agg[pn]||{dev:0,unsub:0,monthDev:0};agg[pn].dev+=pm.dev;agg[pn].monthDev+=pm.monthDev||0;agg[pn].unsub+=pm.unsub;}
   }
-  const rows=Object.keys(agg).map(pn=>{const rate=agg[pn].monthDev>0?agg[pn].unsub/agg[pn].monthDev*100:0;return{pn,dev:agg[pn].dev,unsub:agg[pn].unsub,rate};}).sort((a,b)=>b.rate-a.rate);
+  const rows=Object.keys(agg).map(pn=>{const rate=agg[pn].monthDev>0?agg[pn].unsub/agg[pn].monthDev*100:0;return{pn,dev:agg[pn].dev,unsub:agg[pn].unsub,rate};}).sort(function(a,b){var k=prodSortKey,d=prodSortDir==="asc"?1:-1;
+  if(k==="name")return a.pn.localeCompare(b.pn)*d;
+  if(k==="dev")return (a.dev-b.dev)*d;
+  if(k==="unsub")return (a.unsub-b.unsub)*d;
+  return (a.rate-b.rate)*d;});
   // 聚焦产品置顶（从产品台账「看数据」跳入）
   if(prodFocus){
     const pi=rows.findIndex(r=>r.pn===prodFocus||r.pn.indexOf(prodFocus)>=0||(prodFocus.indexOf(r.pn)>=0&&r.pn.length>1));
@@ -1901,7 +1928,7 @@ function renderProduct(tx){
   const tEl=document.getElementById("txProdTitleText");if(tEl)tEl.textContent="产品分析"+scopeTxt+(filt?(" · "+filt):"")+(prodFocus?(" · 聚焦产品「"+prodFocus+"」"):"");
   const limited=prodShowAll?rows:rows.slice(0,50);
   const moreRow=rows.length>50&&!prodShowAll?`<tr><td colspan="4" style="text-align:center;padding:8px"><span class="tx-note">共 ${rows.length} 个产品，当前仅显示按退订率排序的前 50 个</span> <button class="btn sm ghost" type="button" onclick="prodShowAll=true;renderTx();">显示全部</button></td></tr>`:"";
-  boxT.innerHTML=`<thead><tr><th>包名(产品)</th><th>发展订单<span class="u">（笔）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th></tr></thead><tbody>`+
+  boxT.innerHTML=`<thead><tr><th class="sort-th" data-key="name" onclick="onSortProduct('name')">包名(产品)<span class="sort-arrow"></span></th><th class="sort-th" data-key="dev" onclick="onSortProduct('dev')">发展订单<span class="u">（笔）</span><span class="sort-arrow"></span></th><th class="sort-th" data-key="unsub" onclick="onSortProduct('unsub')">退订数<span class="u">（笔）</span><span class="sort-arrow"></span></th><th class="sort-th" data-key="rate" onclick="onSortProduct('rate')">退订率<span class="u">（%）</span><span class="sort-arrow"></span></th></tr></thead><tbody>`+
     limited.map(r=>{const col=r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981';const wpct=maxDev>0?Math.round(r.dev/maxDev*100):0;
       return `<tr class="${r._hit?'sup-hit':''}">${r._hit?'<td class="nm"><b style="color:#854d0e">⭐ '+esc(r.pn)+'</b></td>':`<td class="nm">${esc(r.pn)}</td>`}<td><span class="cell-bar"><span class="cbfill"><i style="width:${wpct}%"></i></span><span class="cbval">${fmt(r.dev)}</span></span></td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${col}">${r.rate.toFixed(2)}%</td></tr>`;}).join("")+moreRow+`</tbody>`;
 }
