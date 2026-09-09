@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="kHN5H6spyeayzxvFx2FbiQ">
+<head data-page-node-id="uadA5RlfrrL0GPWSyUUs8O">
+<meta charset="UTF-8" data-page-node-id="eBq9xme3dvLUZEIzL7eEM0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="grKx82kNLLXaB38oLoaBkQ">
+<title>职场工作台 · 数据看板 / 项目档案 / 产品台账</title>
+<style>
+  html,body{height:100%;margin:0;background:#eef1f6;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  .boot{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#475569;}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid #dbe2ef;border-top-color:#4f46e5;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .boot p{font-size:13px;}
+  .boot .nav-hint{font-size:12px;color:#94a3b8;}
+</style>
+</head>
+<body data-page-node-id="uP7SuTKmqMwWRY1Sje0zIN">
+<div class="boot" data-page-node-id="1J17goV7RaHcPBYS97VRDE">
+  <div class="spinner" data-page-node-id="Iyz6jccqUOGOhmNQ0gWkBc"></div>
+  <p data-page-node-id="PLrTbTMMP6GnXOKTVeRuUH">正在打开工作台…</p>
+  <div class="nav-hint" data-page-node-id="N5bIMX28xao9TvZvNVS5ne">板块切换统一在页面顶部的「数据看板 / 项目档案 / 产品台账」标签</div>
+</div>
+<script>
+  // 入口页：直接跳转到最后使用的板块（默认数据看板）；板块间切换由各页面顶部统一 tab 承担（整页跳转），不再使用 iframe 壳，避免顶部双套切换按钮
+  var TAB_BASE={dash:'dashboard.html',proj:'project.html',prod:'product.html'};
+  var target='dashboard.html';
+  try{
+    var saved=JSON.parse(localStorage.getItem('wb_shell_tab')||'null');
+    if(saved && saved.name && TAB_BASE[saved.name]){
+      target=TAB_BASE[saved.name] + (saved.qs?('?'+saved.qs):'');
+    }
+  }catch(e){}
+  location.replace(target);
+</script>
+</body>
+</html>
