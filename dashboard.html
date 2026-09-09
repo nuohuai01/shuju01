@@ -791,7 +791,30 @@ function chanInfo(party){
 }
 const load=(k,def)=>{try{return JSON.parse(localStorage.getItem(k))||def;}catch(e){return def;}};
 let userChanMap=load(KCM,{});
-const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+// ===== 分享快照（准自动：数据变化后自动生成文件，发送给 WorkBuddy 后更新永久分享链接）=====
+// 说明：GitHub Secret Scanning 禁止在公开页内置 token，页面不做直推；改为自动产出快照文件。
+function downloadSnapshotFile(reason){
+  try{
+    var lsAll={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}
+    var d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
+    var tx=getTx();if(tx)d.tx=tx;
+    var blob=new Blob([JSON.stringify(d)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    var ts=new Date();function p2(n){return String(n).padStart(2,"0");}
+    a.download="分享快照_"+ts.getFullYear()+"-"+p2(ts.getMonth()+1)+"-"+p2(ts.getDate())+"_"+p2(ts.getHours())+p2(ts.getMinutes())+".json";
+    a.click();URL.revokeObjectURL(a.href);
+    showToast("已自动生成最新分享快照（"+(reason||"数据更新")+"）：请把刚下载的文件发给 WorkBuddy，永久分享链接将在数分钟内更新","ok",6000);
+  }catch(err){try{showToast("生成快照失败："+err.message,"err");}catch(_){}}
+}
+let __autoDl=false;
+function autoShareAfterImport(){
+  if(/share=1/.test(location.search))return; // 分享装载页不产生
+  if(__autoDl)return;
+  __autoDl=true;
+  setTimeout(function(){downloadSnapshotFile("交易导入");__autoDl=false;},800);
+}
 // 迁移：旧口径「渠道属性=信息流」统一更名为「推广」
 (function migrateChanAttr(){
   let changed=false;
@@ -1549,6 +1572,7 @@ async function doImportCore(map){
       if(tx.meta.partyRowsTrimmed||merged.meta.partyRowsTrimmed)msg+=" 大文件已精简渠道方明细（仅保留未识别渠道方，渠道类型/属性重算仅对保留部分生效）。";
       msg+=" 状态分布："+scStr;
     showToast(msg,"ok");
+    try{autoShareAfterImport();}catch(_){}
     // 导入成功后自动切换到本次数据最新月份，让用户直接看到新数据（避免停留在「今日」误以为没更新）
     try{
       const dm=merged.meta.dateMax;
