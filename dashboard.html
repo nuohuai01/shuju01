@@ -478,7 +478,8 @@ if(/share=1/.test(location.search)){(function(){
     <input type="file" id="txFile" accept=".xlsx,.csv" class="file-hidden">
     <div id="mapPanel" class="hidden">
       <div class="map-row">
-        <div class="mf"><label>日期列</label><select id="mapDate"></select></div>
+        <div class="mf"><label>日期列（订购/创建）</label><select id="mapDate"></select></div>
+        <div class="mf"><label>退订日期列 <em style="color:var(--muted);font-style:normal">选填，用于同月退订校验</em></label><select id="mapUnsubDate"></select></div>
         <div class="mf"><label>交易状态列</label><select id="mapStatus"></select></div>
         <div class="mf"><label>供货方列</label><select id="mapSupplier"></select></div>
         <div class="mf"><label>包名(产品)列</label><select id="mapProduct"></select></div>
@@ -1363,9 +1364,14 @@ function periodKey(d,gran){if(gran==="year")return d.slice(0,4);if(gran==="month
 function makeCtx(){return{supplierDay:{},productMonth:{},prodSupMonth:{},prov:{},ch:{},provDay:{},chDay:{},provOpDay:{},chOpDay:{},typeDay:{},attrDay:{},partyRows:[],partyMapped:false,statusCounts:{},totalDev:0,totalMonthDev:0,totalUnsub:0,rows:0,dateMin:"9999",dateMax:"0000",orderKeys:new Set(),orderDuplicated:0,skuSkipped:0,statusSkipped:0,dateSkipped:0};}
 function accRow(ctx,cm,hm){
   const g=k=>hm[k]!=null?(cm[hm[k]]||""):"";
-  const status=g("status"),sp=g("supplier"),pn=g("product"),partyRaw=g("party"),dtRaw=g("date"),ono=g("ono");
+  const status=g("status"),sp=g("supplier"),pn=g("product"),partyRaw=g("party"),dtRaw=g("date"),ono=g("ono"),udRaw=g("unsubdate");
   const dt=normDate(dtRaw);
-  const cs=classifyStatus(status);
+  const ud=udRaw?(String(udRaw).trim()||"").slice(0,10):"";
+  const csB=classifyStatus(status);
+  // 同月退订：退订月须等于订购月（订购时间列 vs 退订日期列）；跨月退订不入任何月份的退订分子，单独计数供对照
+  const crossUnsub=csB.unsub&&ud&&/^\d{4}-\d{2}-\d{2}$/.test(ud)&&dt&&ud.slice(0,7)!==dt.slice(0,7);
+  const cs=crossUnsub?{dev:csB.dev,unsub:false}:csB;
+  if(crossUnsub)ctx.crossUnsub=(ctx.crossUnsub||0)+1;
   const sku=(g("sku")||"").trim();
   const skip=sku==="流量-次包";
   ctx.statusCounts[status]=(ctx.statusCounts[status]||0)+1;
@@ -1576,6 +1582,7 @@ async function handleTxFile(file){
 function buildMapUI(headers){
   const sets=[
     ["mapDate",["订购时间","创建时间","支付时间","交易时间","日期","时间"]],
+    ["mapUnsubDate",["退订时间","退订日期","退订完成时间","最后更新时间"]],
     ["mapStatus",["交易状态","订单状态","状态"]],
     ["mapSupplier",["提供者(供货方)","供货方","渠道方","服务商","供应商","提供方"]],
     ["mapProduct",["包名","产品名称","产品","商品名称","套餐"]],
@@ -1594,7 +1601,7 @@ function buildMapUI(headers){
     for(const a of aliases){const i=headers.findIndex(h=>h&&h.includes(a));if(i>=0){idx=i;break;}}
     if(idx>=0)sel.value=String(idx);
   });
-  document.getElementById("mapNote").textContent="确认列映射后点「导入并更新看板」。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；订单日期优先取「订购时间」；SKU业务类型=「流量-次包」的行不计入退订率（分子分母同步剔除）；同份文件内部按订单号去重。";
+  document.getElementById("mapNote").textContent="确认列映射后点「导入并更新看板」。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；订单日期优先取「订购时间」；「退订日期列」用于同月退订校验（退订月≠订购月不计入退订率，单独计为跨月）；SKU业务类型=「流量-次包」的行不计入退订率（分子分母同步剔除）；同份文件内部按订单号去重。";
   document.getElementById("mapPanel").classList.remove("hidden");
 }
 document.getElementById("btnDoImport").onclick=doImport;
@@ -1644,7 +1651,7 @@ function txVal(id){
   return isNaN(n)?null:n;
 }
 function doImport(){
-  const map={date:txVal("mapDate"),status:txVal("mapStatus"),supplier:txVal("mapSupplier"),product:txVal("mapProduct"),prov:txVal("mapProv"),ch:txVal("mapCh"),party:txVal("mapParty"),sku:txVal("mapSku"),op:txVal("mapOp"),ono:txVal("mapOno")};
+  const map={date:txVal("mapDate"),unsubdate:txVal("mapUnsubDate"),status:txVal("mapStatus"),supplier:txVal("mapSupplier"),product:txVal("mapProduct"),prov:txVal("mapProv"),ch:txVal("mapCh"),party:txVal("mapParty"),sku:txVal("mapSku"),op:txVal("mapOp"),ono:txVal("mapOno")};
   if(map.status==null||map.supplier==null||map.product==null){
     showConfirm("缺少 <b>状态 / 供货方 / 包名</b> 映射，相关分析会不准确。仍要导入？",()=>doImportCore(map));
   }else{
