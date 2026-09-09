@@ -1205,7 +1205,7 @@ function renderMonthly(){
     yms.forEach((ym,i)=>{
       const o=MF[ym],rate=rateOf(o),prev=yms[i-1]!==undefined?MF[yms[i-1]]:undefined;
       const prevRate=prev!==undefined?rateOf(prev):undefined;
-      rows+=`<tr><td class="nm">${ym}</td><td>${fmt(o.dev)}</td><td class="rate">${rate.toFixed(2)}%</td>${hb(o.dev,prev&&prev.dev,true)}${hb(rate,prevRate,true)}</tr>`;
+      rows+=`<tr><td class="nm">${ym}</td><td>${fmt(o.dev)}</td><td class="rate">${rate.toFixed(2)}%</td>${hb(rate,prevRate,true)}${hb(o.dev,prev&&prev.dev,true)}</tr>`;
     });
     box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>订单量环比<span class="u">（%）</span></th><th>退订率环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
     return;
