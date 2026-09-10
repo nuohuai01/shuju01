@@ -59,11 +59,12 @@
   .sup-select{min-height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:13px;background:#fff;color:var(--text);max-width:380px;font-family:inherit;}
   .sel-in{max-width:180px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:#fff;font-size:12px;font-family:inherit;color:var(--text);}
   .sel-in:focus,.txt-in:focus,.num-in:focus{outline:none;border-color:var(--primary);}
-  .tbl.fixed{table-layout:auto;width:100%;}
+  .tbl.fixed{table-layout:fixed;width:100%;}
   /* 列宽自适应：名称列给足宽度，数值/按钮列收窄 */
   /* 百分比列宽：随容器等比自适应，既不空也不挤 */
   #tblStock{width:100%;}
-  #tblStock th:nth-child(1),#tblStock td:nth-child(1){width:30%;min-width:210px;white-space:normal;}
+  #tblStock th:nth-child(1),#tblStock td:nth-child(1){white-space:normal;line-height:1.35;overflow:visible;text-overflow:clip;}
+  #tblStock td:first-child .txt-in{white-space:normal;}
   #tblStock th:nth-child(2),#tblStock td:nth-child(2){width:7%;}
   #tblStock th:nth-child(3),#tblStock td:nth-child(3){width:9%;}
   #tblStock th:nth-child(4),#tblStock td:nth-child(4){width:13%;}
@@ -250,7 +251,7 @@ if(/share=1/.test(location.search)){(function(){
     </h2>
     <p class="edit-tip">🖱️ <b>SKU状态 / 权益包状态</b> 列可直接点击左右切换；下架/关闭的商品会从「在售」统计中剔除（灰色行）。</p>
     <div class="add-bar"><button class="btn-add" onclick="openAdd('stock')">＋ 添加存量产品</button></div>
-    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><colgroup><col style="width:30%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:12%"><col style="width:12%"><col style="width:9%"><col style="width:8%"></colgroup><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <!-- 宽带上架产品 -->
