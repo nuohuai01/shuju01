@@ -135,8 +135,8 @@
   .kpi .nm{font-size:12px;color:var(--muted);}
   .kpi .vl{font-size:22px;font-weight:700;margin:4px 0;font-variant-numeric:tabular-nums;}
   .kpi .dl{font-size:12px;font-weight:600;}
-  .kpi .dl.up{color:var(--green);}
-  .kpi .dl.down{color:var(--red);}
+  .kpi .dl.up{color:var(--red);}
+  .kpi .dl.down{color:var(--green);}
   .kpi .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;padding:2px 7px;border-radius:6px;margin-bottom:6px;line-height:1.3;}
   .kpi .tag.cnt{background:#eef2ff;color:#4f46e5;}
   .kpi .tag.rate{background:#fef3c7;color:#b45309;}
@@ -377,6 +377,10 @@
   .legend .li{grid-template-columns:14px minmax(72px,1fr) auto;gap:8px;}
   .legend .lv,.legend .lhb{display:none;}
   .legend .lp{white-space:nowrap;text-align:right;}
+
+  /* 月表数值列宽：避免千分位数字被挤压误读 */
+  #monthlyTable th,#monthlyTable td{min-width:92px;white-space:nowrap;}
+  #monthlyTable td.nm{min-width:78px;}
 </style>
 
 <script>
@@ -1168,7 +1172,7 @@ function renderMetrics(){
     return;
   }
   if(boxPie)boxPie.innerHTML=pieSVG(rows.map((r,i)=>({n:supplierLabel(r.sp),val:r.dev,color:PALETTE[i%PALETTE.length],hb:r.hb})),"机构");
-  if(boxTable)boxTable.innerHTML=`<thead><tr><th>机构</th><th>发展订单量<span class="u">（笔）</span></th><th>占比<span class="u">（%）</span></th><th>环比<span class="u">（上期，%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率环比<span class="u">（%）</span></th></tr></thead><tbody>`+
+  if(boxTable)boxTable.innerHTML=`<thead><tr><th>机构</th><th>发展订单量<span class="u">（笔）</span></th><th>占比<span class="u">（%）</span></th><th>环比<span class="u">（上期，%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>`+
     rows.map(r=>{const pct=total>0?r.dev/total*100:0;const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');const rc=r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981';const short=supplierLabel(r.sp);
       var rateH=null,rateHCls='';
   if(single && scoped[0]){
@@ -1208,7 +1212,7 @@ function renderMonthly(){
       const prevRate=prev!==undefined?rateOf(prev):undefined;
       rows+=`<tr><td class="nm">${ym}</td><td>${fmt(o.dev)}</td>${hb(o.dev,prev&&prev.dev,true)}<td>${fmt(o.unsub)}</td><td class="rate">${rate.toFixed(2)}%</td>${hb(rate,prevRate,true)}</tr>`;
     });
-    box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>订单量环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
+    box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>订单量月环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
     return;
   }
   const tx=metrics.filter(m=>m.source==="tx");
@@ -1234,7 +1238,7 @@ function renderMonthly(){
     const prevRate=prev!==undefined?rateOf(prev):undefined;
     rows+=`<tr><td class="nm">${ym}</td><td>${fmt(o.dev)}</td>${hb(o.dev,prev&&prev.dev,true)}<td>${fmt(o.unsub)}</td><td class="rate">${rate.toFixed(2)}%</td>${hb(rate,prevRate,true)}</tr>`;
   });
-  box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>订单量环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
+  box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>订单量月环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 // ---- 图表 ----
