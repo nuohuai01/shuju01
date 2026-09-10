@@ -61,10 +61,11 @@
   .sel-in:focus,.txt-in:focus,.num-in:focus{outline:none;border-color:var(--primary);}
   .tbl.fixed{table-layout:auto;width:100%;}
   /* 列宽自适应：名称列给足宽度，数值/按钮列收窄 */
-  #tblStock td:first-child,#tblStock th:first-child{min-width:230px;white-space:normal;}
-  #tblStock td:nth-child(2){width:96px;}
-  #tblStock td:nth-child(3){width:104px;}
-  #tblStock td:nth-child(4){min-width:150px;}
+  /* 名称列吸收剩余宽度，其余列固定紧凑，避免中间大留白 */
+  #tblStock td:first-child,#tblStock th:first-child{width:100%;min-width:230px;white-space:normal;}
+  #tblStock td:nth-child(2),#tblStock th:nth-child(2){width:96px;}
+  #tblStock td:nth-child(3),#tblStock th:nth-child(3){width:104px;}
+  #tblStock td:nth-child(4),#tblStock th:nth-child(4){width:150px;}
   #tblStock td:nth-child(5),#tblStock td:nth-child(6){width:132px;}
   #tblStock td:nth-child(7){width:118px;}
   #tblStock td:last-child{width:122px;}
