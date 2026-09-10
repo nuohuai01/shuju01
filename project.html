@@ -18,9 +18,12 @@
         Array.from(tb.rows||[]).forEach(function(tr){
           Array.from(tr.cells||[]).forEach(function(td,i){
             if(!td.dataset.label)td.dataset.label=heads[i]||"";
-            .hbar{grid-template-columns:1fr!important;gap:4px;}
-    .hbar .hn{white-space:normal;}
- if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",labelAll);
+          });
+        });
+      });
+    });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",labelAll);
   else labelAll();
   setTimeout(labelAll,800);setTimeout(labelAll,2000);
 })();
