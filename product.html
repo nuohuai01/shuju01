@@ -175,6 +175,10 @@
   .wrap{max-width:1440px;}
   #tblStock td:last-child,#tblStock th:last-child{white-space:nowrap;overflow:visible;text-overflow:clip;}
   #tblStock td:last-child .icon-btn,#tblStock td:last-child .btn{white-space:nowrap;}
+
+  /* 表格贴边：负外边距抵消卡片 18px 内边距，表格与卡片边界基本对齐 */
+  .tbl-scroll{margin-left:-14px;margin-right:-14px;width:calc(100% + 28px);}
+  @media(max-width:900px){.tbl-scroll{margin-left:0;margin-right:0;width:100%;}}
 </style>
 
 <script>
