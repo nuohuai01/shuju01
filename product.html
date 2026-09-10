@@ -173,6 +173,13 @@
 
 
   /* 操作列：按钮一行居中显示 */
+
+  /* 名称列：纯文本显示（可换行），点击进入编辑 */
+  #tblStock td.nm-cell{white-space:normal;max-width:320px;line-height:1.4;}
+  #tblStock .nm-txt{display:inline-block;cursor:text;border-bottom:1px dashed transparent;}
+  #tblStock .nm-txt:hover{color:var(--primary);border-bottom-color:var(--primary);}
+  #tblStock .nm-txt.empty{color:var(--muted);}
+  #tblStock td.nm-cell input.txt-in{min-width:220px;}
 </style>
 
 <script>
@@ -402,7 +409,19 @@ function prodOp(p){
   if(s.indexOf("华数")>=0) return "华数";
   return "";
 }
-function relatedProjects(op){
+// 名称列：点击进入编辑（纯文本显示 → 输入框 → 失焦/回车保存）
+function nmEdit(td,kind,key,field){
+  if(!td||td.querySelector("input"))return;
+  var span=td.querySelector(".nm-txt");
+  var cur=span?(span.classList.contains("empty")?"":span.textContent):"";
+  var inp=document.createElement("input");
+  inp.className="txt-in";inp.type="text";inp.value=cur;inp.placeholder="产品名称";
+  td.innerHTML="";td.appendChild(inp);inp.focus();inp.select();
+  var done=false;
+  function save(){if(done)return;done=true;setNum(kind,key,field,inp.value);}
+  inp.addEventListener("blur",save);
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();inp.blur();}});
+}function relatedProjects(op){
   if(!op) return 0;
   // 优先读项目档案页的持久化数据（含用户新增/删除），无则回退种子
   let proj=null;try{proj=JSON.parse(localStorage.getItem("wb_project_archive"));}catch(e){proj=null;}
@@ -721,7 +740,7 @@ function renderTables(){
     else ar.textContent="";
   });
   document.querySelector("#tblStock tbody").innerHTML=bs.map(p=>`<tr class="${onShelfStock(p)?'':'off'}">
-    <td>${textInput("stock",p.offerId,"name",p.name,"产品名称")}</td><td class="amt">${numInput("stock",p.offerId,"amount",p.amount)}</td><td>${opSelect("stock",p.offerId,"operator",p.operator)}</td>
+    <td class="nm-cell">${p.name?`<span class="nm-txt" title="${esc(p.name)}" onclick="nmEdit(this.parentNode,'stock','${esc(p.offerId)}','name')">${esc(p.name)}</span>`:'<span class="nm-txt empty">—</span>'}</td><td class="amt">${numInput("stock",p.offerId,"amount",p.amount)}</td><td>${opSelect("stock",p.offerId,"operator",p.operator)}</td>
     <td>${supSelect("stock",p.offerId,p.supplier)}</td>
     <td>${statusToggle("stock",p.offerId,"skuStatus",p.skuStatus,["上架","下架"])}</td>
     <td>${statusToggle("stock",p.offerId,"status",p.status,["开启","关闭"])}</td>
