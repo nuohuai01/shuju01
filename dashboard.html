@@ -827,21 +827,43 @@ async function doShareSync(reason){
     var lsAll={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}
     var d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
     var tx=getTx();if(tx)d.tx=tx;
-    var b64="";try{b64=btoa(unescape(encodeURIComponent(JSON.stringify(d))));}catch(e){}
-    if(!b64){try{showToast("同步失败：编码异常","err");}catch(e){}__syncing=false;return false;}
+    var payload=JSON.stringify(d);
+    // 内容校验：本地数据异常（空/过小）时拒绝上传，避免把云端快照写坏
+    var keyCount=Object.keys(lsAll).length;
+    if(!payload||payload.length<800||keyCount<5){
+      try{showToast("同步已中止：本地数据为空或异常（未覆盖云端快照）","err",6000);}catch(e){}
+      __syncing=false;return false;
+    }
+    var b64="";try{b64=btoa(unescape(encodeURIComponent(payload)));}catch(e){b64="";}
+    if(!b64||b64.length<800){try{showToast("同步已中止：数据编码异常（未覆盖云端快照）","err",6000);}catch(e){}__syncing=false;return false;}
     var u="https://api.github.com/repos/"+GIT_SYNC.owner+"/"+GIT_SYNC.repo+"/contents/"+GIT_SYNC.path;
-    var sha=null;
-    try{var r=await fetch(u,{headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json"}});
-      if(r.ok){var j=await r.json();sha=j.sha;}}catch(e){}
-    var put=await fetch(u,{method:"PUT",headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
-      body:JSON.stringify({message:"auto sync "+new Date().toISOString(),content:b64,sha:sha||undefined,branch:"main"})});
-    if(put.ok){try{showToast("已自动同步分享链接（"+(reason||"数据更新")+"）","ok");}catch(e){}__syncing=false;return true;}
-    var t=null;try{t=await put.json();}catch(e){}
-    try{showToast("直推失败("+((t&&t.message)||put.status)+")，已自动导出快照文件，请发我更新","err",6000);}catch(e){}
+    var ok=false,msg="";
+    for(var attempt=0;attempt<2&&!ok;attempt++){
+      var sha=null;
+      try{
+        var r=await fetch(u,{headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json"}});
+        if(r.ok){var j0=await r.json();sha=j0.sha;}
+      }catch(e){}
+      var put=await fetch(u,{method:"PUT",headers:{Authorization:"Bearer "+GIT_SYNC.token,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+        body:JSON.stringify({message:"auto sync "+new Date().toISOString(),content:b64,sha:sha||undefined,branch:"main"})});
+      if(put.ok){
+        var j=null;try{j=await put.json();}catch(e){}
+        var sz=j&&j.content&&j.content.size;
+        if(sz&&Math.abs(sz-payload.length)>100){msg="同步可能不完整（云端 "+sz+" / 本地 "+payload.length+" 字节）";}
+        else{ok=true;}
+        break;
+      }
+      var t=null;try{t=await put.json();}catch(e){}
+      msg=String((t&&t.message)||put.status);
+      if(put.status===409){continue;} // sha 冲突：重取 sha 再试一次
+      break;
+    }
+    if(ok){try{showToast("已自动同步分享链接（"+(reason||"数据更新")+"）","ok");}catch(e){}__syncing=false;return true;}
+    try{showToast("直推失败("+msg+")，已自动导出快照文件，请发我更新","err",6000);}catch(e){}
     __syncing=false;
     try{setTimeout(downloadSnapshotFile,300);}catch(e){}
     return false;
-  }catch(err){try{showToast("直推异常："+err.message+"，请用右上「生成分享快照」手动同步","err",6000);}catch(e){}}
+  }catch(err){try{showToast("直推异常："+err.message+"，请用右上「立即同步」重试","err",6000);}catch(e){}}
   __syncing=false;return false;
 }
 
