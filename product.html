@@ -179,7 +179,7 @@
 
   /* 操作列：按钮一行居中显示 */
   #tblStock td.ops{text-align:right;white-space:nowrap;padding-right:8px;}
-  #tblStock td.ops a,#tblStock td.ops button{display:inline-block;vertical-align:middle;margin:0 3px;}
+  #tblStock td.ops a,#tblStock td.ops button{display:inline-block;vertical-align:middle;margin:0 2px;}
 </style>
 
 <script>
@@ -261,7 +261,7 @@ if(/share=1/.test(location.search)){(function(){
     </h2>
     <p class="edit-tip">🖱️ <b>SKU状态 / 权益包状态</b> 列可直接点击左右切换；下架/关闭的商品会从「在售」统计中剔除（灰色行）。</p>
     <div class="add-bar"><button class="btn-add" onclick="openAdd('stock')">＋ 添加存量产品</button></div>
-    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><colgroup><col style="width:24%"><col style="width:6%"><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:10%"><col style="width:19%"></colgroup><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><colgroup><col style="width:23%"><col style="width:6%"><col style="width:8%"><col style="width:12%"><col style="width:11%"><col style="width:11%"><col style="width:7%"><col style="width:22%"></colgroup><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <!-- 宽带上架产品 -->
