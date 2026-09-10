@@ -733,7 +733,7 @@ function renderTables(){
     <td>${statusToggle("stock",p.offerId,"skuStatus",p.skuStatus,["上架","下架"])}</td>
     <td>${statusToggle("stock",p.offerId,"status",p.status,["开启","关闭"])}</td>
     <td>${textInput("stock",p.offerId,"interfaceId",p.interfaceId,"接口ID")}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据分析</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
   document.querySelector("#tblBroad tbody").innerHTML=bb.map(p=>`<tr class="${onShelfBroad(p)?'':'off'}">
     <td>${esc(p.name)}</td><td title="${esc(p.provider)}">${esc(archShortOf(p.provider))}</td><td>${esc(p.operator)}</td>
     <td>${esc(p.rate)}</td><td>${textInput("broad",p.productNo,"province",p.province||"","省")}</td><td>${esc(p.city)}</td>
@@ -741,7 +741,7 @@ function renderTables(){
     <td>${numInput("broad",p.productNo,"commission",p.commission)}</td>
     <td>${statusToggle("broad",p.productNo,"commissionType",p.commissionType||"商机单类",["商机单类","竣工类"])}</td>
     <td>${statusToggle("broad",p.productNo,"shelf",p.shelf,["已上架","已下架","暂不上架"])}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据分析</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
 }
 
 // ---- 布局切换（单列 / 双列）----
