@@ -139,6 +139,22 @@
   .miss-saved.show{opacity:1;}
   .miss-table td.f20-slash{color:#c0c6d4;}
   .miss-table td.note-txt{color:#b45309;font-size:12px;}
+
+  /* 表格窄屏卡片化：与 dashboard 一致 */
+  @media(max-width:900px){
+    .tbl.fixed,.tbl,.tx-table{width:100%;table-layout:auto;min-width:0;}
+    .tbl.fixed col{width:auto!important;}
+    .tbl thead,.tx-table thead{display:none;}
+    .tbl tbody tr,.tx-table tbody tr{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+    .tbl tbody td,.tbl tbody tr td,.tx-table tbody td,.tx-table tbody tr td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #f1f5f9;}
+    .tbl tbody td:last-child,.tx-table tbody td:last-child{border-bottom:none;justify-content:flex-end;padding-top:8px;gap:6px;}
+    .tbl tbody td::before,.tx-table tbody td::before{content:attr(data-label);font-size:12px;color:var(--muted);font-weight:600;flex:0 0 auto;max-width:80px;line-height:1.3;}
+    .tbl tbody td .txt-in,.tbl tbody td .num-in,.tbl tbody td .sel-in,
+    .tx-table tbody td .txt-in,.tx-table tbody td .num-in,.tx-table tbody td .sel-in,
+    .tx-table tbody td .bar-cell,.tx-table tbody td .cell-bar{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;min-width:60px;flex:1 1 auto;text-align:right;}
+    /* 产品台账特殊列：最后「操作」列要展示全部按钮 */
+    .tbl tbody tr td.ops,.tbl tbody tr td:last-child{justify-content:flex-end;flex-wrap:wrap;}
+  }
 </style>
 
 <script>
