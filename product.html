@@ -62,18 +62,14 @@
   .tbl.fixed{table-layout:fixed;width:100%;}
   /* 列宽自适应：名称列给足宽度，数值/按钮列收窄 */
   /* 百分比列宽：随容器等比自适应，既不空也不挤 */
-  #tblStock{width:100%;}
   #tblStock th:nth-child(1),#tblStock td:nth-child(1){white-space:normal;line-height:1.35;overflow:visible;text-overflow:clip;}
   #tblStock td:first-child .txt-in{white-space:normal;}
-  #tblStock th:nth-child(2),#tblStock td:nth-child(2){width:7%;}
   #tblStock th:nth-child(3),#tblStock td:nth-child(3){width:9%;}
   #tblStock th:nth-child(4),#tblStock td:nth-child(4){width:13%;}
   #tblStock th:nth-child(5),#tblStock td:nth-child(5){width:12%;}
   #tblStock th:nth-child(6),#tblStock td:nth-child(6){width:12%;}
   #tblStock th:nth-child(7),#tblStock td:nth-child(7){width:9%;}
   #tblStock th:nth-child(8),#tblStock td:nth-child(8){width:8%;}
-  #tblStock .txt-in{width:100%;}
-  #tblStock .num-in{width:86px;}
   .tbl td,.tbl th{white-space:nowrap;}
   
   
@@ -178,8 +174,6 @@
 
 
   /* 操作列：按钮一行居中显示 */
-  #tblStock td.ops{text-align:right;white-space:nowrap;padding-right:8px;}
-  #tblStock td.ops a,#tblStock td.ops button{display:inline-block;vertical-align:middle;margin:0 2px;}
 </style>
 
 <script>
@@ -261,7 +255,7 @@ if(/share=1/.test(location.search)){(function(){
     </h2>
     <p class="edit-tip">🖱️ <b>SKU状态 / 权益包状态</b> 列可直接点击左右切换；下架/关闭的商品会从「在售」统计中剔除（灰色行）。</p>
     <div class="add-bar"><button class="btn-add" onclick="openAdd('stock')">＋ 添加存量产品</button></div>
-    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><colgroup><col style="width:23%"><col style="width:6%"><col style="width:8%"><col style="width:12%"><col style="width:11%"><col style="width:11%"><col style="width:7%"><col style="width:22%"></colgroup><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-scroll"><table class="tbl fixed" id="tblStock"><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <!-- 宽带上架产品 -->
@@ -733,7 +727,7 @@ function renderTables(){
     <td>${statusToggle("stock",p.offerId,"skuStatus",p.skuStatus,["上架","下架"])}</td>
     <td>${statusToggle("stock",p.offerId,"status",p.status,["开启","关闭"])}</td>
     <td>${textInput("stock",p.offerId,"interfaceId",p.interfaceId,"接口ID")}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据分析</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
   document.querySelector("#tblBroad tbody").innerHTML=bb.map(p=>`<tr class="${onShelfBroad(p)?'':'off'}">
     <td>${esc(p.name)}</td><td title="${esc(p.provider)}">${esc(archShortOf(p.provider))}</td><td>${esc(p.operator)}</td>
     <td>${esc(p.rate)}</td><td>${textInput("broad",p.productNo,"province",p.province||"","省")}</td><td>${esc(p.city)}</td>
@@ -741,7 +735,7 @@ function renderTables(){
     <td>${numInput("broad",p.productNo,"commission",p.commission)}</td>
     <td>${statusToggle("broad",p.productNo,"commissionType",p.commissionType||"商机单类",["商机单类","竣工类"])}</td>
     <td>${statusToggle("broad",p.productNo,"shelf",p.shelf,["已上架","已下架","暂不上架"])}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据分析</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
 }
 
 // ---- 布局切换（单列 / 双列）----
