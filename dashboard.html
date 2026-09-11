@@ -394,7 +394,7 @@ if(/share=1/.test(location.search)){(function(){
     var def="dashboard.html";
     try{var u=new URL(location.href);u.searchParams.delete("share");history.replaceState(null,"",u.pathname+(u.searchParams.toString()?"?"+u.searchParams.toString():""));location.reload();}catch(e){}
   }
-  fetch("snapshot.json?t="+Date.now()).then(function(r){if(!r.ok)throw new Error("no snapshot");return r.json();}).then(function(d){boot(d);})
+  fetch("snapshot-v2.json?t="+Date.now()).then(function(r){if(!r.ok)throw new Error("no snapshot");return r.json();}).then(function(d){boot(d);})
   .catch(function(){try{alert("分享数据加载失败，请确认与快照文件在同一部署目录访问。");}catch(e){}});
 })();}
 </script>
@@ -818,7 +818,7 @@ function maybeAutoSync(k){
 // ===== 分享快照（准自动：数据变化后自动生成文件，发送给 WorkBuddy 后更新永久分享链接）=====
 // 说明：GitHub Secret Scanning 禁止在公开页内置 token，页面不做直推；改为自动产出快照文件。
 // ===== 自动直推 GitHub（受限钥匙：仅 nuohuai01/shuju01；push protection 已在该仓库关闭）=====
-const GIT_SYNC={owner:"nuohuai01",repo:"shuju01",path:"snapshot.json",
+const GIT_SYNC={owner:"nuohuai01",repo:"shuju01",path:"snapshot-v2.json",
   token:["github","_pat_","11CN4637Q0ymwvAPlv5Tjt","_4wI9kHcDhEP9ROKevMWcTisNIym","nYJp1k8yqMCocJfQVFCNMBOVOzjfzx5Z"].join("")};
 let __syncing=false;
 async function doShareSync(reason){
