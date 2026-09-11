@@ -180,6 +180,12 @@
   #tblStock .nm-txt:hover{color:var(--primary);border-bottom-color:var(--primary);}
   #tblStock .nm-txt.empty{color:var(--muted);}
   #tblStock td.nm-cell input.txt-in{min-width:220px;}
+
+  /* 末两列保证最小宽度：避免按钮溢出到表格边框外 */
+  #tblStock th:nth-child(7),#tblStock td:nth-child(7){min-width:92px;}
+  #tblStock th:nth-child(7) input,#tblStock td:nth-child(7) input{width:100%;min-width:72px;}
+  #tblStock th:last-child,#tblStock td:last-child{min-width:124px;white-space:nowrap;}
+  #tblStock td:last-child a,#tblStock td:last-child button{flex:0 0 auto;}
 </style>
 
 <script>
