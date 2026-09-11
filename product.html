@@ -189,6 +189,7 @@
 
   /* ===== 窄屏（卡片化）修正：解除桌面端最小宽度约束，避免值溢出卡片 ===== */
   @media(max-width:900px){
+    #tblStock{min-width:0!important;}
     #tblStock td.nm-cell{min-width:0!important;max-width:none!important;width:auto;}
     #tblStock .nm-txt{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;}
     #tblStock th:nth-child(7),#tblStock td:nth-child(7),
@@ -215,7 +216,7 @@
 
 
   /* 双列：表格保底宽度（列内容完整不压缩），改为页面级横向滑动（单滚动条） */
-  #tblStock{min-width:900px;}
+  body.layout-wide #tblStock{min-width:900px;}
   body.layout-wide .tbl-scroll{overflow-x:visible;}
 </style>
 
