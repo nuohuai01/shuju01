@@ -153,6 +153,8 @@
   /* 表格窄屏卡片化：与 dashboard 一致 */
   @media(max-width:900px){
     .tbl.fixed,.tbl,.tx-table{width:100%;table-layout:auto;min-width:0;}
+    table.tbl{min-width:0!important;}
+    #tblStock{min-width:0!important;}
     .tbl.fixed col{width:auto!important;}
     .tbl thead,.tx-table thead{display:none;}
     .tbl tbody tr,.tx-table tbody tr{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
