@@ -65,7 +65,7 @@
 <script>
 function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function jget(ls,k,fb){try{var v=JSON.parse(ls[k]||'null');return v==null?fb:v;}catch(e){return fb;}}
-fetch("snapshot.json?t="+Date.now()).then(r=>{if(!r.ok)throw new Error(String(r.status));return r.json();}).then(d=>{
+fetch("snapshot-v2.json?t="+Date.now()).then(r=>{if(!r.ok)throw new Error(String(r.status));return r.json();}).then(d=>{
   var ls=d.ls||{};
   var tEl=document.getElementById("snapTime");
   if(d.time){try{tEl.textContent="快照时间："+new Date(d.time).toLocaleString("zh-CN",{hour12:false});}catch(e){tEl.textContent="快照时间："+esc(d.time);}}
@@ -81,7 +81,7 @@ fetch("snapshot.json?t="+Date.now()).then(r=>{if(!r.ok)throw new Error(String(r.
   document.getElementById("statBox").innerHTML='<div class="row"><span>项目档案 <b>'+arch.length+'</b> 条</span><span>产品 <b>'+(st+bb)+'</b> 个（存量 '+st+' · 宽带 '+bb+'）</span><span>任务 <b>'+tks.length+'</b> 条</span><span>缺品优先级 <b>'+miss.length+'</b> 条</span><span>交易指标 <b>'+mts.length+'</b> 条</span></div>';
 }).catch(e=>{
   document.getElementById("snapTime").textContent="加载失败";
-  document.getElementById("statBox").innerHTML='<div class="row"><span>无法读取快照（'+esc(e.message)+'）。请确认页面与 snapshot.json 在同一部署目录。</span></div>';
+  document.getElementById("statBox").innerHTML='<div class="row"><span>无法读取快照（'+esc(e.message)+'）。请确认页面与 snapshot-v2.json 在同一部署目录。</span></div>';
 });
 </script>
 </body>
