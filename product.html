@@ -201,9 +201,10 @@
   }
   /* ===== 窄屏/中屏：双列自动降为单列（避免并排挤压） ===== */
   @media(max-width:1100px){
-    body.layout-wide .main-grid{flex-direction:column;}
-    body.layout-wide .dash-col{width:100%!important;max-width:none;}
-    body.layout-wide .list-col{width:100%;min-width:0;}
+    body.layout-wide .wrap{overflow-x:auto;}
+  body.layout-wide .main-grid{flex-direction:row;min-width:980px;}
+    body.layout-wide .dash-col{width:340px!important;flex:0 0 340px;max-width:340px;position:static;max-height:none;overflow-y:visible;}
+    body.layout-wide .list-col{flex:1 1 auto;width:auto;min-width:0;}
   }
 </style>
 
