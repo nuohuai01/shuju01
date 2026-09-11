@@ -808,8 +808,13 @@ let save=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));maybeAutoSync(k);};
 const SYNC_KEYS=["wb_workdash_tasks","wb_workdash_metrics","wb_workdash_reports","wb_workdash_tx",
  "wb_project_archive","wb_product_data","wb_workdash_chanmap","wb_miss_priority_v1","wb_workdash_weeklyReport"];
 let __autoSyncT=null;
+let __syncReady=false;
+["pointerdown","keydown","change"].forEach(function(ev){
+  document.addEventListener(ev,function(){__syncReady=true;},{once:true,capture:true});
+});
 function maybeAutoSync(k){
   if(/share=1/.test(location.search))return;
+  if(!__syncReady)return;   // 关键：页面刚打开时的种子/初始化写入不触发自动同步（避免空设备覆盖云端）
   if(SYNC_KEYS.indexOf(String(k))<0)return;
   clearTimeout(__autoSyncT);
   __autoSyncT=setTimeout(function(){doShareSync("数据变更");},3000);
@@ -833,8 +838,9 @@ async function doShareSync(reason){
     var payload=JSON.stringify(d);
     // 内容校验：本地数据异常（空/过小）时拒绝上传，避免把云端快照写坏
     var keyCount=Object.keys(lsAll).length;
-    if(!payload||payload.length<800||keyCount<5){
-      try{showToast("同步已中止：本地数据为空或异常（未覆盖云端快照）","err",6000);}catch(e){}
+    var hasBiz=!!(lsAll["wb_project_archive"]||lsAll["wb_workdash_tx"]||lsAll["wb_miss_priority_v1"]);
+    if(!payload||payload.length<5000||keyCount<6||!hasBiz){
+      try{showToast("同步已中止：本机数据不完整（缺少档案/交易/缺品数据），未覆盖云端快照。请在本机导入数据后再同步","err",7000);}catch(e){}
       __syncing=false;return false;
     }
     var b64="";try{b64=btoa(unescape(encodeURIComponent(payload)));}catch(e){b64="";}
