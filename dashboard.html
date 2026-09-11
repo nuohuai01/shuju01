@@ -223,6 +223,13 @@
     .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     .table-wrap.no-scroll{overflow-x:auto;overflow-y:visible;}
     .tx-table{font-size:12.5px;min-width:560px;}
+    /* 手机端：保持横排表格 + 横向滑动（用户偏好，不做卡片化）；不截断内容，色块不溢出 */
+    .tx-table thead{display:table-header-group!important;}
+    .tx-table tbody tr{display:table-row!important;}
+    .tx-table tbody td{display:table-cell!important;padding:6px 7px!important;vertical-align:middle;white-space:nowrap;}
+    .tx-table tbody td::before{display:none!important;}
+    .cell-bar{max-width:100%;}
+    .cell-bar .cbfill{max-width:100%;min-width:28px;}
     .tx-table th,.tx-table td{padding:7px 8px;}
     .kpis{gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
     .kpi{padding:10px;}
