@@ -175,8 +175,8 @@
   /* 操作列：按钮一行居中显示 */
 
   /* 名称列：纯文本显示（可换行），点击进入编辑 */
-  #tblStock td.nm-cell{white-space:normal;max-width:320px;line-height:1.4;}
-  #tblStock .nm-txt{display:inline-block;cursor:text;border-bottom:1px dashed transparent;}
+  #tblStock td.nm-cell{white-space:normal!important;min-width:200px;max-width:340px;line-height:1.4;overflow-wrap:anywhere;word-break:break-word;}
+  #tblStock .nm-txt{display:block;white-space:normal;cursor:text;border-bottom:1px dashed transparent;}
   #tblStock .nm-txt:hover{color:var(--primary);border-bottom-color:var(--primary);}
   #tblStock .nm-txt.empty{color:var(--muted);}
   #tblStock td.nm-cell input.txt-in{min-width:220px;}
