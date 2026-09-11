@@ -212,8 +212,11 @@
   #tblStock th:nth-child(4),#tblStock td:nth-child(4){min-width:120px;}
   #tblStock td:nth-child(3) select,#tblStock td:nth-child(4) select{width:100%;min-width:88px;max-width:none;}
   #tblStock td:nth-child(2) input{min-width:64px;}
-  /* 双列时表格可横向滚动（容器已支持），不压缩列内容 */
+
+
+  /* 双列：表格保底宽度（列内容完整不压缩），改为页面级横向滑动（单滚动条） */
   #tblStock{min-width:900px;}
+  body.layout-wide .tbl-scroll{overflow-x:visible;}
 </style>
 
 <script>
