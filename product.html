@@ -206,6 +206,14 @@
     body.layout-wide .dash-col{width:340px!important;flex:0 0 340px;max-width:340px;position:static;max-height:none;overflow-y:visible;}
     body.layout-wide .list-col{flex:1 1 auto;width:auto;min-width:0;}
   }
+
+  /* 双列/窄容器下：运营商、供货方、接口ID 列保底宽度，避免只显示下拉箭头 */
+  #tblStock th:nth-child(3),#tblStock td:nth-child(3){min-width:96px;}
+  #tblStock th:nth-child(4),#tblStock td:nth-child(4){min-width:120px;}
+  #tblStock td:nth-child(3) select,#tblStock td:nth-child(4) select{width:100%;min-width:88px;max-width:none;}
+  #tblStock td:nth-child(2) input{min-width:64px;}
+  /* 双列时表格可横向滚动（容器已支持），不压缩列内容 */
+  #tblStock{min-width:900px;}
 </style>
 
 <script>
