@@ -186,6 +186,25 @@
   #tblStock th:nth-child(7) input,#tblStock td:nth-child(7) input{width:100%;min-width:72px;}
   #tblStock th:last-child,#tblStock td:last-child{min-width:124px;white-space:nowrap;}
   #tblStock td:last-child a,#tblStock td:last-child button{flex:0 0 auto;}
+
+  /* ===== 窄屏（卡片化）修正：解除桌面端最小宽度约束，避免值溢出卡片 ===== */
+  @media(max-width:900px){
+    #tblStock td.nm-cell{min-width:0!important;max-width:none!important;width:auto;}
+    #tblStock .nm-txt{display:block;width:100%;white-space:normal;overflow-wrap:anywhere;}
+    #tblStock th:nth-child(7),#tblStock td:nth-child(7),
+    #tblStock th:last-child,#tblStock td:last-child{min-width:0!important;}
+    #tblStock td:last-child{flex-wrap:wrap;gap:8px;justify-content:flex-end;}
+    /* 卡片内输入/下拉自适应，不超出卡片 */
+    .tbl tbody td input,.tbl tbody td select,.tbl tbody td .txt-in,.tbl tbody td .num-in,.tbl tbody td .sel-in{max-width:100%;min-width:0;flex:1 1 auto;}
+    .tbl tbody td::before{max-width:96px;}
+    .tbl tbody td{gap:8px;}
+  }
+  /* ===== 窄屏/中屏：双列自动降为单列（避免并排挤压） ===== */
+  @media(max-width:1100px){
+    body.layout-wide .main-grid{flex-direction:column;}
+    body.layout-wide .dash-col{width:100%!important;max-width:none;}
+    body.layout-wide .list-col{width:100%;min-width:0;}
+  }
 </style>
 
 <script>
