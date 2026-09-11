@@ -233,18 +233,13 @@
     #kpiPie .legend{grid-template-columns:1fr 1fr;width:100%;}
     .hbar{grid-template-columns:1fr!important;gap:4px;}
     .hbar .hn{white-space:normal;}
-  }    /* dashboard 的 .tx-table 不用卡片化（数字 value 与 ::before 挤空白），保持表格+横滑 */
-    .tx-table thead{display:table-header-group!important;}
-    .tx-table tbody tr{display:table-row!important;}
-    .tx-table tbody td{display:table-cell!important;padding:6px 8px!important;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
-    .tx-table tbody td::before{display:none!important;}
-    .tx-table{font-size:12.5px;}
-    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  }    #kpiPie .legend{grid-template-columns:1fr;width:100%;}
+  }@media(max-width:600px){
+    #kpiPie .legend{grid-template-columns:1fr;width:100%;}
     #kpiPie .legend .li{grid-template-columns:14px minmax(96px,1fr) auto auto auto;gap:6px;align-items:center;}
     #kpiPie .legend .lv,#kpiPie .legend .lp,#kpiPie .legend .lhb{font-size:11px;}
     .tx-table tbody td,.tx-table tbody tr td{padding:5px 0;}
     .tx-table tbody td::before{max-width:88px;}
+  }
 
   .sec-title{font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px;}
   .sec{margin-top:8px;}
