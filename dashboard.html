@@ -1182,16 +1182,18 @@ function renderMetrics(){
   }
   const single=scoped.length===1;
   let rows=Object.keys(sup).map(sp=>{
-    let dev=0,monthDev=0,unsub=0,hb=null;
+    let dev=0,monthDev=0,unsub=0,monthUnsub=0,hb=null;
     if(single){
       const curC=sup[sp][scoped[0]]||{dev:0,unsub:0,monthDev:0};
       const prev=periods[periods.indexOf(scoped[0])-1];
       const pv=prev?sup[sp][prev]||{dev:0,unsub:0,monthDev:0}:{dev:0,unsub:0,monthDev:0};
-      dev=curC.dev;monthDev=curC.monthDev||0;unsub=curC.unsub;hb=pv.dev>0?((curC.dev-pv.dev)/pv.dev*100):null;
+      dev=curC.dev;monthDev=curC.monthDev||0;unsub=curC.unsub;
+      monthUnsub=(curC.monthUnsub!==undefined?curC.monthUnsub:curC.unsub);
+      hb=pv.dev>0?((curC.dev-pv.dev)/pv.dev*100):null;
     }else{
-      scoped.forEach(p=>{const c=sup[sp][p];if(c){dev+=c.dev;monthDev+=c.monthDev||0;unsub+=c.unsub;}});
+      scoped.forEach(p=>{const c=sup[sp][p];if(c){dev+=c.dev;monthDev+=c.monthDev||0;unsub+=c.unsub;monthUnsub+=(c.monthUnsub!==undefined?c.monthUnsub:c.unsub);}});
     }
-    return {sp,dev,monthDev,unsub,rate:monthDev>0?unsub/monthDev*100:0,hb};
+    return {sp,dev,monthDev,unsub,monthUnsub,rate:monthDev>0?(monthUnsub/monthDev*100):0,hb};
   }).filter(r=>r.dev>0).sort((a,b)=>b.dev-a.dev);
   if(supFocus){rows=rows.filter(r=>supHit(r.sp));}
   const total=rows.reduce((s,r)=>s+r.dev,0);
@@ -1210,8 +1212,10 @@ function renderMetrics(){
       var rateH=null,rateHCls='';
   if(single && scoped[0]){
     var prevK=periods[periods.indexOf(scoped[0])-1];
-    var p=tx.supplierDay[r.sp] && tx.supplierDay[r.sp][prevK];
-    if(p && p.monthDev>0){var prevRate=p.unsub/p.monthDev*100;rateH=(r.rate-prevRate)/prevRate*100;}
+    var sd=(tx&&tx.supplierDay&&tx.supplierDay[r.sp])||{};
+    var pmd=0,pun=0;
+    for(var dk in sd){ if(String(dk).slice(0,7)===prevK){ pmd+=sd[dk].monthDev||0; pun+=(sd[dk].monthUnsub!==undefined?sd[dk].monthUnsub:(sd[dk].unsub||0)); } }
+    if(pmd>0){ var prevRate=pun/pmd*100; if(prevRate>0) rateH=(r.rate-prevRate)/prevRate*100; }
   }
   var rateHTxt=rateH===null?'—':(rateH>=0?'▲ +':'▼ ')+Math.abs(rateH).toFixed(1)+'%';
   var rateHCls=rateH===null?'flat':(rateH>=0?'down':'up');
