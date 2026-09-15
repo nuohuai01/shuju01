@@ -1218,7 +1218,7 @@ function renderMetrics(){
     if(pmd>0){ var prevRate=pun/pmd*100; if(prevRate>0) rateH=(r.rate-prevRate)/prevRate*100; }
   }
   var rateHTxt=rateH===null?'—':(rateH>=0?'▲ +':'▼ ')+Math.abs(rateH).toFixed(1)+'%';
-  var rateHCls=rateH===null?'flat':(rateH>=0?'down':'up');
+  var rateHCls=rateH===null?'flat':(rateH>=0?'up':'down');  /* 退订率涨=差=红，跌=好=绿 */
   return `<tr class="${supHit(r.sp)?'sup-hit':''}"><td class="nm" title="${esc(r.sp)}">${archiveLink(r.sp,short)}</td><td>${fmt(r.dev)}</td><td class="rate">${pct.toFixed(2)}%</td><td class="${hbCls}">${hbTxt}</td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${rc}">${r.rate.toFixed(2)}%</td><td class="${rateHCls}">${rateHTxt}</td></tr>`;}).join("")+`</tbody>`;
 }
 function renderMonthly(){
