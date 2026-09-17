@@ -384,6 +384,31 @@
   /* 月表数值列宽：避免千分位数字被挤压误读 */
   #monthlyTable th,#monthlyTable td{min-width:92px;white-space:nowrap;}
   #monthlyTable td.nm{min-width:78px;}
+
+  /* 渠道类型/属性：环形图 + 图例（合并卡片）与联动高亮 */
+  .ring-card{display:flex;gap:18px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);}
+  .ring-box{flex:0 0 auto;}
+  .ring-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
+  .rd-head,.rd-row{display:grid;grid-template-columns:minmax(78px,1.1fr) 1.5fr minmax(92px,auto) 56px 66px;gap:10px;align-items:center;font-size:12px;}
+  .rd-head{color:var(--muted);font-size:11.5px;}
+  .rd-row{cursor:pointer;transition:opacity .15s,transform .15s;}
+  .rd-nm{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rd-bars{display:flex;flex-direction:column;gap:3px;}
+  .rd-bar{display:block;height:9px;border-radius:5px;background:#eef1f8;overflow:hidden;}
+  .rd-bar>i{display:block;height:100%;background:#534AB7;}
+  .rd-gray{height:5px;border-radius:3px;}
+  .rd-gray>i{background:#94a3b8;}
+  .rd-v{text-align:right;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .rd-v em{font-style:normal;font-size:11.5px;}
+  .rd-p{text-align:right;color:var(--text);font-variant-numeric:tabular-nums;}
+  .rd-pg{color:var(--muted);}
+  .rd-tip{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  [data-dimgroup] [data-dimk]{transition:opacity .15s,transform .15s;}
+  [data-dimgroup].dimmed [data-dimk]{opacity:.32;}
+  [data-dimgroup] [data-dimk].hl{opacity:1;transform:scale(1.02);}
+  [data-dimgroup] svg [data-dimk]{transition:stroke-width .15s,opacity .15s;}
+  [data-dimgroup] svg [data-dimk].hl{stroke-width:20;}
+  [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 </style>
 
 <script>
@@ -2265,17 +2290,19 @@ function renderOneDim(prefix,dayMap,label,granOverride){
     if(dev>0)agg2[k]={dev,monthDev,unsub,hb,rateH};
   }
   const rows=Object.keys(agg2).map(k=>{const a=agg2[k];const rate=a.monthDev>0?a.unsub/a.monthDev*100:0;return {k,dev:a.dev,monthDev:a.monthDev||0,unsub:a.unsub,hb:a.hb,rate,rateH:a.rateH};}).sort((a,b)=>b.dev-a.dev);
-  // 清除旧警告
   const wrap=boxT&&boxT.parentElement;
   if(wrap)wrap.querySelectorAll("."+prefix+"-warn").forEach(e=>e.remove());
-  if(rows.length===0){boxT.innerHTML='<div class="empty">该时间范围无数据</div>';boxPie.innerHTML='<div class="empty">该时间范围无数据</div>';boxBar.innerHTML='<div class="empty">该时间范围无数据</div>';return;}
+  if(rows.length===0){boxT.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxPie)boxPie.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxBar)boxBar.innerHTML='';return;}
   const totalDev=rows.reduce((s,r)=>s+r.dev,0);
-  rows.forEach(r=>r.pct=totalDev>0?r.dev/totalDev*100:0);
+  const totalUnsub=rows.reduce((s,r)=>s+r.unsub,0);
+  rows.forEach(r=>{r.pct=totalDev>0?r.dev/totalDev*100:0;r.upct=totalUnsub>0?r.unsub/totalUnsub*100:0;});
+  // 合并卡片：环形图（外环=订单占比 / 内环=退订占比，置灰）+ 图例即数据条
+  const group=boxPie?(boxPie.closest(".sec-body")||boxPie.parentElement):wrap;
+  if(group)group.setAttribute("data-dimgroup",prefix);
+  if(boxPie)boxPie.innerHTML=ringCard(rows,label);
+  if(boxBar)boxBar.innerHTML="";
   boxT.innerHTML=`<thead><tr><th>${label}</th><th class="txr">发展订单<span class="u">（笔）</span></th><th class="txr">环比<span class="u">（上期，%）</span></th><th class="txr">占比<span class="u">（%）</span></th><th class="txr">退订数<span class="u">（笔）</span></th><th class="txr">退订率<span class="u">（%）</span></th><th class="txr">退订率环比<span class="u">（%）</span></th></tr></thead><tbody>`+
-    rows.map(r=>{const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');return `<tr><td class="nm">${esc(r.k)}</td><td class="txr">${fmt(r.dev)}</td><td class="${hbCls} txr">${hbTxt}</td><td class="rate txr">${r.pct.toFixed(2)}%</td><td class="txr">${fmt(r.unsub)}</td><td class="rate txr" style="color:${r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981'}">${r.rate.toFixed(2)}%</td><td class="${r.rateH==null?'flat':(r.rateH>=0?'up':'down')} txr">${r.rateH==null?"—":(r.rateH>=0?"▲ +":"▼ ")+Math.abs(r.rateH).toFixed(1)+"%"}</td></tr>`;}).join("")+`</tbody>`;
-  const colors=["#4f46e5","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
-  boxPie.innerHTML=pieSVG(rows.map((r,i)=>({n:r.k,val:r.dev,color:colors[i%colors.length],hb:r.hb})),label);
-  boxBar.innerHTML=barShare(rows.map((r,i)=>({n:r.k,rate:r.pct,color:colors[i%colors.length],dev:r.dev,hb:r.hb})),label);
+    rows.map(r=>{const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');return `<tr data-dimk="${esc(r.k)}"><td class="nm">${esc(r.k)}</td><td class="txr">${fmt(r.dev)}</td><td class="${hbCls} txr">${hbTxt}</td><td class="rate txr">${r.pct.toFixed(2)}%</td><td class="txr">${fmt(r.unsub)}</td><td class="rate txr" style="color:${r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981'}">${r.rate.toFixed(2)}%</td><td class="${r.rateH==null?'flat':(r.rateH>=0?'up':'down')} txr">${r.rateH==null?"—":(r.rateH>=0?"▲ +":"▼ ")+Math.abs(r.rateH).toFixed(1)+"%"}</td></tr>`;}).join("")+`</tbody>`;
   // 单一分类占比 100% 时提示映射可能填错
   if(rows.length===1 && rows[0].pct>=99.99 && wrap){
     const warn=document.createElement("div");
@@ -2283,6 +2310,34 @@ function renderOneDim(prefix,dayMap,label,granOverride){
     warn.innerHTML=`警告：当前映射把所有订单都归到了「${esc(rows[0].k)}」，请检查「数据补充」里的映射表是否把「渠道类型 / 渠道属性」填成了同一值。`;
     wrap.insertBefore(warn,boxT);
   }
+}
+// 环形图 + 图例（图例即数据条）：外环=订单占比（彩色），内环=退订占比（灰阶，对应扇区置灰）
+function ringCard(rows,label){
+  const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
+  const colors=["#534AB7","#1D9E75","#BA7517","#D85A30","#888780","#185FA5","#993556","#3B6D11"];
+  const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
+  let off1=0,off2=0,segs="",segs2="";
+  rows.forEach((r,i)=>{
+    const l1=C1*(r.pct/100), l2=C2*(r.upct/100);
+    segs+=`<circle r="${R1}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="15" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-off1).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
+    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="8" stroke-dasharray="${Math.max(1,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-off2).toFixed(1)}" opacity=".92" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订占比 ${r.upct.toFixed(1)}%</title></circle>`;
+    off1+=l1; off2+=l2;
+  });
+  const legend=rows.map((r,i)=>`<div class="rd-row" data-dimk="${esc(r.k)}">
+      <span class="rd-nm" title="${esc(r.k)}">${esc(r.k)}</span>
+      <span class="rd-bars"><span class="rd-bar"><i style="width:${Math.max(1,r.pct).toFixed(1)}%;background:${colors[i%colors.length]}"></i></span><span class="rd-bar rd-gray"><i style="width:${Math.max(1,r.upct).toFixed(1)}%"></i></span></span>
+      <span class="rd-v">${fmt(r.dev)}${r.hb==null?'':` <em class="${r.hb>=0?'up':'down'}">${r.hb>=0?'▲':'▼'}${Math.abs(r.hb).toFixed(1)}%</em>`}</span>
+      <span class="rd-p">${r.pct.toFixed(1)}%</span>
+      <span class="rd-p rd-pg">${r.upct.toFixed(1)}%</span>
+    </div>`).join("");
+  return `<div class="ring-card">
+    <div class="ring-box"><svg viewBox="0 0 130 130" width="132" height="132" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订</text></svg></div>
+    <div class="ring-legend">
+      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars">订单量 / 环比</span><span class="rd-v"></span><span class="rd-p">占比</span><span class="rd-p rd-pg">退订占比</span></div>
+      ${legend}
+      <div class="rd-tip">悬停联动高亮 · 点击锁定（其它置灰）· 再点或点空白复原</div>
+    </div>
+  </div>`;
 }
 function pieSVG(items,label){
   if(!items||items.length===0)return '<div class="empty">无数据</div>';
@@ -2456,6 +2511,40 @@ function setLayout(m){
 setLayout(layoutMode);
 
 // ---- 渲染总入口 ----
+// 渠道维度区块：悬停联动高亮 + 点击锁定（再点同一项或点空白复原）
+const __dimLock={};
+function __applyDim(group,pre,k){
+  if(!group)return;
+  group.classList.toggle("dimmed",!!k);
+  group.querySelectorAll("[data-dimk]").forEach(function(el){el.classList.toggle("hl",!!k&&el.getAttribute("data-dimk")===k);});
+}
+document.addEventListener("mouseover",function(e){
+  var t=e.target&&e.target.closest?e.target.closest("[data-dimk]"):null;if(!t)return;
+  var g=t.closest("[data-dimgroup]");if(!g)return;
+  var pre=g.getAttribute("data-dimgroup");if(__dimLock[pre])return;
+  __applyDim(g,pre,t.getAttribute("data-dimk"));
+});
+document.addEventListener("mouseout",function(e){
+  var t=e.target&&e.target.closest?e.target.closest("[data-dimk]"):null;if(!t)return;
+  var g=t.closest("[data-dimgroup]");if(!g)return;
+  if(e.relatedTarget&&t.contains(e.relatedTarget))return;
+  var pre=g.getAttribute("data-dimgroup");if(__dimLock[pre])return;
+  __applyDim(g,pre,null);
+});
+document.addEventListener("click",function(e){
+  var t=e.target&&e.target.closest?e.target.closest("[data-dimk]"):null;
+  var g=t?t.closest("[data-dimgroup]"):null;
+  if(!t||!g){
+    Object.keys(__dimLock).forEach(function(pre){
+      if(!__dimLock[pre])return;__dimLock[pre]=null;
+      __applyDim(document.querySelector('[data-dimgroup="'+pre+'"]'),pre,null);
+    });
+    return;
+  }
+  var pre=g.getAttribute("data-dimgroup"),k=t.getAttribute("data-dimk");
+  if(__dimLock[pre]===k){__dimLock[pre]=null;__applyDim(g,pre,null);}
+  else{__dimLock[pre]=k;__applyDim(g,pre,k);}
+});
 function renderAll(){renderTasks();renderMetrics();renderTx();renderMonthly();checkAlert();}
 renderAll();
 </script>
