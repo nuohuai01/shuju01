@@ -2252,25 +2252,27 @@ function renderOneDim(prefix,dayMap,label,granOverride){
   const single=scoped.length===1;
   const agg2={};
   for(const k in agg){
-    let dev=0,monthDev=0,unsub=0,hb=null;
+    let dev=0,monthDev=0,unsub=0,hb=null,rateH=null;
     if(single){
       const cur=scoped[0];const curC=agg[k][cur]||{dev:0,unsub:0,monthDev:0};
       const prev=periods[periods.indexOf(cur)-1];const pv=prev?agg[k][prev]||{dev:0,unsub:0,monthDev:0}:{dev:0,unsub:0,monthDev:0};
       dev=curC.dev;monthDev=curC.monthDev||0;unsub=curC.unsub;hb=pv.dev>0?((curC.dev-pv.dev)/pv.dev*100):null;
+      const curRate=curC.monthDev>0?curC.unsub/curC.monthDev*100:0;
+      if(pv.monthDev>0){const prRate=pv.unsub/pv.monthDev*100;if(prRate>0)rateH=(curRate-prRate)/prRate*100;}
     }else{
       scoped.forEach(p=>{const c=agg[k][p];if(c){dev+=c.dev;monthDev+=c.monthDev||0;unsub+=c.unsub;}});
     }
-    if(dev>0)agg2[k]={dev,monthDev,unsub,hb};
+    if(dev>0)agg2[k]={dev,monthDev,unsub,hb,rateH};
   }
-  const rows=Object.keys(agg2).map(k=>({k,dev:agg2[k].dev,monthDev:agg2[k].monthDev||0,unsub:agg2[k].unsub,hb:agg2[k].hb})).sort((a,b)=>b.dev-a.dev);
+  const rows=Object.keys(agg2).map(k=>{const a=agg2[k];const rate=a.monthDev>0?a.unsub/a.monthDev*100:0;return {k,dev:a.dev,monthDev:a.monthDev||0,unsub:a.unsub,hb:a.hb,rate,rateH:a.rateH};}).sort((a,b)=>b.dev-a.dev);
   // 清除旧警告
   const wrap=boxT&&boxT.parentElement;
   if(wrap)wrap.querySelectorAll("."+prefix+"-warn").forEach(e=>e.remove());
   if(rows.length===0){boxT.innerHTML='<div class="empty">该时间范围无数据</div>';boxPie.innerHTML='<div class="empty">该时间范围无数据</div>';boxBar.innerHTML='<div class="empty">该时间范围无数据</div>';return;}
   const totalDev=rows.reduce((s,r)=>s+r.dev,0);
   rows.forEach(r=>r.pct=totalDev>0?r.dev/totalDev*100:0);
-  boxT.innerHTML=`<thead><tr><th>${label}</th><th class="txr">发展订单<span class="u">（笔）</span></th><th class="txr">环比<span class="u">（上期，%）</span></th><th class="txr">占比<span class="u">（%）</span></th><th class="txr">退订数<span class="u">（笔）</span></th></tr></thead><tbody>`+
-    rows.map(r=>{const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');return `<tr><td class="nm">${esc(r.k)}</td><td class="txr">${fmt(r.dev)}</td><td class="${hbCls} txr">${hbTxt}</td><td class="rate txr">${r.pct.toFixed(2)}%</td><td class="txr">${fmt(r.unsub)}</td></tr>`;}).join("")+`</tbody>`;
+  boxT.innerHTML=`<thead><tr><th>${label}</th><th class="txr">发展订单<span class="u">（笔）</span></th><th class="txr">环比<span class="u">（上期，%）</span></th><th class="txr">占比<span class="u">（%）</span></th><th class="txr">退订数<span class="u">（笔）</span></th><th class="txr">退订率<span class="u">（%）</span></th><th class="txr">退订率环比<span class="u">（%）</span></th></tr></thead><tbody>`+
+    rows.map(r=>{const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');return `<tr><td class="nm">${esc(r.k)}</td><td class="txr">${fmt(r.dev)}</td><td class="${hbCls} txr">${hbTxt}</td><td class="rate txr">${r.pct.toFixed(2)}%</td><td class="txr">${fmt(r.unsub)}</td><td class="rate txr" style="color:${r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981'}">${r.rate.toFixed(2)}%</td><td class="${r.rateH==null?'flat':(r.rateH>=0?'up':'down')} txr">${r.rateH==null?"—":(r.rateH>=0?"▲ +":"▼ ")+Math.abs(r.rateH).toFixed(1)+"%"}</td></tr>`;}).join("")+`</tbody>`;
   const colors=["#4f46e5","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
   boxPie.innerHTML=pieSVG(rows.map((r,i)=>({n:r.k,val:r.dev,color:colors[i%colors.length],hb:r.hb})),label);
   boxBar.innerHTML=barShare(rows.map((r,i)=>({n:r.k,rate:r.pct,color:colors[i%colors.length],dev:r.dev,hb:r.hb})),label);
