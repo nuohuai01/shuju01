@@ -416,6 +416,7 @@ if(/share=1/.test(location.search)){(function(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>立即同步
       </button>
 
+      <button class="btn" id="btnLoadCloud" title="用云端最新数据覆盖本机（多端对齐；本机未同步的修改会丢失）">载入云端</button>
       <button class="btn" id="btnImport">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>全站恢复
       </button>
@@ -826,6 +827,29 @@ function maybeAutoSync(k){
 const GIT_SYNC={owner:"nuohuai01",repo:"shuju01",path:"snapshot-v2.json",
   token:["github","_pat_","11CN4637Q0ymwvAPlv5Tjt","_4wI9kHcDhEP9ROKevMWcTisNIym","nYJp1k8yqMCocJfQVFCNMBOVOzjfzx5Z"].join("")};
 let __syncing=false;
+let __loadingCloud=false;
+// 从云端快照载入数据到本机（含交易数据），用于多端对齐/换设备
+async function loadFromCloud(){
+  if(__loadingCloud)return;
+  if(!confirm("将用【云端最新数据】覆盖本机数据（本机尚未同步的修改会丢失）。\n\n建议：先点「立即同步」保存本机改动，再执行载入。\n\n确定继续？"))return;
+  __loadingCloud=true;
+  try{
+    var r=await fetch("snapshot-v2.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    var d=await r.json();
+    if(!d||!d.ls)throw new Error("云端快照为空");
+    var n=0;
+    Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);n++;}catch(e){}});
+    if(d.tx){setTx(d.tx);}else{try{delTx();}catch(e){}}
+    try{showToast("已载入云端数据（"+n+" 项），正在刷新…","ok",5000);}catch(e){}
+    setTimeout(function(){location.reload();},900);
+    return true;
+  }catch(err){
+    try{showToast("载入失败："+(err&&err.message||err),"err",7000);}catch(e){}
+  }
+  __loadingCloud=false;
+  return false;
+}
 async function doShareSync(reason){
   if(/share=1/.test(location.search))return false;
   if(!GIT_SYNC||!GIT_SYNC.token)return false;
@@ -1645,6 +1669,7 @@ function buildMapUI(headers){
   document.getElementById("mapNote").textContent="确认列映射后点「导入并更新看板」。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；订单日期优先取「订购时间」；「退订日期列」用于同月退订校验（退订月≠订购月不计入退订率，单独计为跨月）；SKU业务类型=「流量-次包」的行不计入退订率（分子分母同步剔除）；同份文件内部按订单号去重。";
   document.getElementById("mapPanel").classList.remove("hidden");
 }
+document.getElementById("btnLoadCloud").onclick=loadFromCloud;
 document.getElementById("btnDoImport").onclick=doImport;
 async function doImportCore(map){
   document.getElementById("txMeta").textContent="正在解析并汇总（大文件可能需十几秒）…";
