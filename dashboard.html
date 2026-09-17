@@ -655,6 +655,9 @@ if(/share=1/.test(location.search)){(function(){
 <script>
 const PREFIX="wb_workdash_";
 const KT=PREFIX+"tasks", KM=PREFIX+"metrics", KR=PREFIX+"reports", KTX=PREFIX+"tx";
+// ⚠️ 聚焦参数必须在任何渲染之前解析（从产品台账「看数据」跳转带入 sup/prod）
+let supFocus=String(new URLSearchParams(location.search).get("sup")||"").trim();
+let prodFocus=String(new URLSearchParams(location.search).get("prod")||"").trim();
 // ---- 交易数据存储适配层：IndexedDB 存大文件聚合结果（localStorage 仅约 5MB），localStorage 兜底/迁移 ----
 const IDB_NAME="wb_workdash_db", IDB_STORE="kv";
 let _db=null,_txCache=null;
@@ -1426,7 +1429,7 @@ function parseCellsStr(xml,sst){
   return m;
 }
 function periodKey(d,gran){if(gran==="year")return d.slice(0,4);if(gran==="month")return d.slice(0,7);return d;}
-function makeCtx(){return{supplierDay:{},productMonth:{},prodSupMonth:{},prov:{},ch:{},provDay:{},chDay:{},provOpDay:{},chOpDay:{},typeDay:{},attrDay:{},partyRows:[],partyMapped:false,statusCounts:{},totalDev:0,totalMonthDev:0,totalUnsub:0,rows:0,dateMin:"9999",dateMax:"0000",orderKeys:new Set(),orderDuplicated:0,skuSkipped:0,statusSkipped:0,dateSkipped:0};}
+function makeCtx(){return{supplierDay:{},productMonth:{},prodSupMonth:{},prov:{},ch:{},provDay:{},chDay:{},provOpDay:{},chOpDay:{},typeDay:{},attrDay:{},typeSupDay:{},attrSupDay:{},partyRows:[],partyMapped:false,statusCounts:{},totalDev:0,totalMonthDev:0,totalUnsub:0,rows:0,dateMin:"9999",dateMax:"0000",orderKeys:new Set(),orderDuplicated:0,skuSkipped:0,statusSkipped:0,dateSkipped:0};}
 function accRow(ctx,cm,hm){
   const g=k=>hm[k]!=null?(cm[hm[k]]||""):"";
   const status=g("status"),sp=g("supplier"),pn=g("product"),partyRaw=g("party"),dtRaw=g("date"),ono=g("ono"),udRaw=g("unsubdate");
@@ -1470,6 +1473,11 @@ function accRow(ctx,cm,hm){
       const attrKey=info?info.attr:(party?"未识别渠道方":"未知");
       ctx.typeDay[typeKey]=ctx.typeDay[typeKey]||{};const td=ctx.typeDay[typeKey][dt]=ctx.typeDay[typeKey][dt]||{dev:0,unsub:0,monthDev:0};if(cs.dev)td.dev++;if(cs.dev&&!skip)td.monthDev++;if(cs.unsub)td.unsub++;
       ctx.attrDay[attrKey]=ctx.attrDay[attrKey]||{};const ad=ctx.attrDay[attrKey][dt]=ctx.attrDay[attrKey][dt]||{dev:0,unsub:0,monthDev:0};if(cs.dev)ad.dev++;if(cs.dev&&!skip)ad.monthDev++;if(cs.unsub)ad.unsub++;
+      // 「渠道类型/属性 × 机构 × 日期」维度：用于聚焦某机构时渠道分析也随之筛选
+      if(sp){
+        ctx.typeSupDay[typeKey]=ctx.typeSupDay[typeKey]||{};const tsb=ctx.typeSupDay[typeKey][sp]=ctx.typeSupDay[typeKey][sp]||{};const ts=tsb[dt]=tsb[dt]||{dev:0,unsub:0,monthDev:0};if(cs.dev)ts.dev++;if(cs.dev&&!skip)ts.monthDev++;if(cs.unsub)ts.unsub++;
+        ctx.attrSupDay[attrKey]=ctx.attrSupDay[attrKey]||{};const asb=ctx.attrSupDay[attrKey][sp]=ctx.attrSupDay[attrKey][sp]||{};const as=asb[dt]=asb[dt]||{dev:0,unsub:0,monthDev:0};if(cs.dev)as.dev++;if(cs.dev&&!skip)as.monthDev++;if(cs.unsub)as.unsub++;
+      }
     }
   }else{
     // 统计被口径剔除的行（便于向用户解释"导入 X 行、展示 Y 笔"的差异）
@@ -1525,7 +1533,7 @@ function finalizeTx(ctx){
   return {meta:{file:window.__txFile,importedFiles:[window.__txFile],rows:ctx.rows,uniqueOrders:ctx.orderKeys.size,duplicated:ctx.orderDuplicated,skuSkipped:ctx.skuSkipped,statusSkipped:ctx.statusSkipped,dateSkipped:ctx.dateSkipped,time:new Date().toLocaleString("zh-CN"),dateMin:ctx.dateMin,dateMax:ctx.dateMax,statusCounts:ctx.statusCounts,partyRowsTrimmed:!!ctx.partyRowsTrimmed,partyMapped:ctx.partyMapped},
     supplierDay:ctx.supplierDay,productMonth:ctx.productMonth,prodSupMonth:ctx.prodSupMonth,prov:ctx.prov,ch:ctx.ch,provDay:ctx.provDay,chDay:ctx.chDay,
     provOpDay:ctx.provOpDay,chOpDay:ctx.chOpDay,
-    typeDay:ctx.typeDay,attrDay:ctx.attrDay,
+    typeDay:ctx.typeDay,attrDay:ctx.attrDay,typeSupDay:ctx.typeSupDay,attrSupDay:ctx.attrSupDay,
     partyRows:ctx.partyRows,
     kpis:{dev:ctx.totalDev,monthDev:ctx.totalMonthDev,unsub:ctx.totalUnsub,rate:ctx.totalMonthDev?ctx.totalUnsub/ctx.totalMonthDev*100:0}};
 }
@@ -1543,7 +1551,7 @@ function mergeTx(old, incoming){
   const merge3D=(a,b)=>{ if(!b) return; for(const pn in b){ a[pn]=a[pn]||{}; for(const sp in b[pn]){ a[pn][sp]=a[pn][sp]||{}; for(const m in b[pn][sp]){ const inc=b[pn][sp][m]||{dev:0,unsub:0}; const cur=a[pn][sp][m]||{dev:0,unsub:0}; cur.dev=inc.dev; cur.monthDev=inc.monthDev||0; cur.unsub=inc.unsub; a[pn][sp][m]=cur; } } } };
   // 原地合并（不深拷贝旧数据）：old 来自 localStorage 可安全 mutate，避免大对象全量复制导致慢
   const out=old;
-  ["supplierDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
+  ["supplierDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","typeSupDay","attrSupDay","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
   out.meta.importedFiles=out.meta.importedFiles||[];
   out.meta.statusCounts=out.meta.statusCounts||{};
   merge2D(out.supplierDay, incoming.supplierDay);
@@ -1551,6 +1559,8 @@ function mergeTx(old, incoming){
   merge3D(out.prodSupMonth, incoming.prodSupMonth);
   add2D(out.typeDay, incoming.typeDay);
   add2D(out.attrDay, incoming.attrDay);
+  add2D(out.typeSupDay, incoming.typeSupDay);
+  add2D(out.attrSupDay, incoming.attrSupDay);
   if(!Array.isArray(out.partyRows))out.partyRows=[];
   if(Array.isArray(incoming.partyRows))out.partyRows=out.partyRows.concat(incoming.partyRows);
   // 合并后若渠道方明细过大，仅保留未识别部分并截断，避免存储膨胀
@@ -1726,8 +1736,7 @@ function doImport(){
 }
 // ---- 渲染 ----
 let txY="",txM="",txD="";
-let supFocus=String(new URLSearchParams(location.search).get("sup")||"").trim();
-let prodFocus=String(new URLSearchParams(location.search).get("prod")||"").trim(); // 从产品台账「看数据」带入：置顶聚焦的具体产品（交易包名）
+
 let __prodMissWarned=false;
 let __supScrolled=false;
 let _archList=[];
@@ -1826,7 +1835,7 @@ function renderTx(){
   meta.textContent=`已导入：${fileLabel} · ${fmt(tx.meta.rows)} 行 · ${tx.meta.dateMin}~${tx.meta.dateMax} · 更新于 ${tx.meta.time}`;
   if(supFocus||prodFocus){
     const banner=document.getElementById("txSupBanner");
-    if(banner)banner.innerHTML=`已聚焦：<b>${esc(supFocus||"该机构")}</b>${prodFocus?` · 产品 <b>${esc(prodFocus)}</b>`:""}（数据总览/月度/供货方/产品分析/趋势仅展示该机构；分布/渠道类型/属性暂为全量）<a class="linkbtn" href="javascript:void(0)" onclick="clearSupFocus()">✕ 清除聚焦</a>`;
+    if(banner)banner.innerHTML=`已聚焦：<b>${esc(supFocus||"该机构")}</b>${prodFocus?` · 产品 <b>${esc(prodFocus)}</b>`:""}（数据总览/月度/供货方/产品分析/趋势/渠道类型/渠道属性均按该机构筛选；省份分布暂为全量）<a class="linkbtn" href="javascript:void(0)" onclick="clearSupFocus()">✕ 清除聚焦</a>`;
   }else{
     const banner=document.getElementById("txSupBanner");if(banner)banner.innerHTML="";
   }
@@ -2165,9 +2174,33 @@ function saveChanMap(){
   showToast("已保存 "+changed+" 条渠道方映射"+(cleared?"（清除 "+cleared+" 条）":"")+"，并重新计算渠道类型 / 属性。","ok");
 }
 function onProdSupChange(){const tx=getTx();if(tx)renderProduct(tx);}
+// 聚焦某机构时：渠道类型/属性也按该机构筛选（需数据含「机构维度」，历史数据可能没有 → 回退全量）
+function filterDimBySup(dim){
+  var out={};
+  for(var k in dim){
+    var bySp=dim[k]||{},acc=null;
+    for(var sp in bySp){ if(!supHit(sp))continue;
+      var days=bySp[sp]||{};
+      for(var dt in days){ var c=days[dt]||{}; acc=acc||{}; var t=acc[dt]=acc[dt]||{dev:0,unsub:0,monthDev:0};
+        t.dev+=c.dev||0;t.unsub+=c.unsub||0;t.monthDev+=c.monthDev||0; }
+    }
+    if(acc)out[k]=acc;
+  }
+  return out;
+}
 function renderChannelTypeAttr(tx){
-  renderOneDim("txType",tx.typeDay||{},"渠道类型");
-  renderOneDim("txAttr",tx.attrDay||{},"渠道属性");
+  var useFilter=!!(supFocus&&tx&&((tx.typeSupDay&&Object.keys(tx.typeSupDay).length)||(tx.attrSupDay&&Object.keys(tx.attrSupDay).length)));
+  if(useFilter){
+    renderOneDim("txType",filterDimBySup(tx.typeSupDay||{}),"渠道类型");
+    renderOneDim("txAttr",filterDimBySup(tx.attrSupDay||{}),"渠道属性");
+  }else{
+    renderOneDim("txType",tx.typeDay||{},"渠道类型");
+    renderOneDim("txAttr",tx.attrDay||{},"渠道属性");
+  }
+  var t1=document.getElementById("txTypeTitleText"),t2=document.getElementById("txAttrTitleText");
+  var suf=useFilter?"（聚焦 "+(supFocus||"")+"）":"（全量）";
+  if(t1)t1.textContent="渠道类型分析（周期内发展订单数量、占比 · 饼图）"+suf;
+  if(t2)t2.textContent="渠道属性分析（周期内发展订单数量、占比 · 饼图）"+suf;
 }
 function renderOneDim(prefix,dayMap,label){
   const boxT=document.getElementById(prefix+"Table"),boxPie=document.getElementById(prefix+"Pie"),boxBar=document.getElementById(prefix+"Bar");
