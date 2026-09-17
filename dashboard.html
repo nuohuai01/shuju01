@@ -2316,26 +2316,29 @@ function ringCard(rows,label){
   const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
   const colors=["#534AB7","#1D9E75","#BA7517","#D85A30","#888780","#185FA5","#993556","#3B6D11"];
   const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
-  let off1=0,off2=0,segs="",segs2="";
+  let off1=0,segs="",segs2="";
   rows.forEach((r,i)=>{
-    const l1=C1*(r.pct/100), l2=C2*(r.upct/100);
+    const l1=C1*(r.pct/100);
+    const ratePct=Math.min(100,Math.max(0,Number(r.rate)||0));
+    // 内环段长 = 外环段长 × 该渠道退订率（因此永远不超出外环段）；起点与外环对应扇区对齐
+    const l2=C2*((r.pct/100)*(ratePct/100));
     segs+=`<circle r="${R1}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="15" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-off1).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
-    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="8" stroke-dasharray="${Math.max(1,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-off2).toFixed(1)}" opacity=".92" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订占比 ${r.upct.toFixed(1)}%</title></circle>`;
-    off1+=l1; off2+=l2;
+    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="8" stroke-dasharray="${Math.max(0.8,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-off1).toFixed(1)}" opacity=".95" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订率 ${ratePct.toFixed(2)}%（内环长=外环段×退订率）</title></circle>`;
+    off1+=l1;
   });
   const legend=rows.map((r,i)=>`<div class="rd-row" data-dimk="${esc(r.k)}">
       <span class="rd-nm" title="${esc(r.k)}">${esc(r.k)}</span>
-      <span class="rd-bars"><span class="rd-bar"><i style="width:${Math.max(1,r.pct).toFixed(1)}%;background:${colors[i%colors.length]}"></i></span><span class="rd-bar rd-gray"><i style="width:${Math.max(1,r.upct).toFixed(1)}%"></i></span></span>
+      <span class="rd-bars"><span class="rd-bar"><i style="width:${Math.max(1,r.pct).toFixed(1)}%;background:${colors[i%colors.length]}"></i></span><span class="rd-bar rd-gray"><i style="width:${Math.max(1,Math.min(100,Number(r.rate)||0)).toFixed(1)}%"></i></span></span>
       <span class="rd-v">${fmt(r.dev)}${r.hb==null?'':` <em class="${r.hb>=0?'up':'down'}">${r.hb>=0?'▲':'▼'}${Math.abs(r.hb).toFixed(1)}%</em>`}</span>
       <span class="rd-p">${r.pct.toFixed(1)}%</span>
-      <span class="rd-p rd-pg">${r.upct.toFixed(1)}%</span>
+      <span class="rd-p rd-pg">${(Math.min(100,Number(r.rate)||0)).toFixed(2)}%</span>
     </div>`).join("");
   return `<div class="ring-card">
-    <div class="ring-box"><svg viewBox="0 0 130 130" width="132" height="132" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订</text></svg></div>
+    <div class="ring-box"><svg viewBox="0 0 130 130" width="132" height="132" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
     <div class="ring-legend">
-      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars">订单量 / 环比</span><span class="rd-v"></span><span class="rd-p">占比</span><span class="rd-p rd-pg">退订占比</span></div>
+      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars">订单量 / 环比</span><span class="rd-v"></span><span class="rd-p">订单占比</span><span class="rd-p rd-pg">退订率</span></div>
       ${legend}
-      <div class="rd-tip">悬停联动高亮 · 点击锁定（其它置灰）· 再点或点空白复原</div>
+      <div class="rd-tip">内环段长 = 外环段长 × 该渠道退订率（起点对齐，永不超过外环）；悬停联动高亮 · 点击锁定 · 再点或点空白复原</div>
     </div>
   </div>`;
 }
