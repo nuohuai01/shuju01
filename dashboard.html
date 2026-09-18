@@ -424,7 +424,18 @@
   [data-dimgroup] svg [data-dimk].hl{stroke-width:20;}
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 
-  /* 渠道类型/渠道属性：实测横向并排在常见视口（1528/1280）下会裁切右侧列，故不做模块并排，保持上下堆叠 */
+  /* 渠道类型/渠道属性：环形图缩到「机构饼图」同尺寸(110px) + 图例收窄 → 双列宽屏可并排 */
+  @media(min-width:1500px){
+    body.layout-wide #txMainSec>.sec-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start;}
+    body.layout-wide #txMainSec>.sec-duo>.sec{min-width:0;}
+    body.layout-wide #txMainSec>.sec-duo .ring-card{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;}
+    body.layout-wide #txMainSec>.sec-duo .ring-legend{flex:1 1 auto;min-width:0;max-width:none;}
+    body.layout-wide #txMainSec>.sec-duo .ring-box svg{width:110px;}
+    body.layout-wide #txMainSec>.sec-duo .rd-head,body.layout-wide #txMainSec>.sec-duo .rd-row{grid-template-columns:42px minmax(24px,1fr) 42px 52px 38px 38px 40px 52px;gap:3px;font-size:10px;}
+    body.layout-wide #txMainSec>.sec-duo .rd-head>span{white-space:normal;line-height:1.12;}
+    body.layout-wide #txMainSec>.sec-duo .sec-title{font-size:12px;}
+    body.layout-wide #txMainSec>.sec-duo .tx-note{font-size:11px;}
+  }
 
   /* ===== 交易分析区：模块视觉顺序（仅调 order，不改 DOM，不影响任何数据联动）===== */
   #txMainSec{display:flex;flex-direction:column;}
