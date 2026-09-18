@@ -448,6 +448,9 @@
   #txTrendTitle{order:8;} #txMainSec>.trend-row{order:9;}
   #txMonthlyTitle{order:20;} #txMonthlyWrap{order:21;}
   #txSup{order:30;} #txProd{order:31;} #txDistSec{order:32;}
+
+  .ring-box{display:flex;flex-direction:column;align-items:center;min-width:0;}
+  .ring-cap{font-size:11px;color:var(--muted);text-align:center;margin-top:5px;line-height:1.35;max-width:110px;}
 </style>
 
 <script>
@@ -2382,7 +2385,7 @@ function ringCard(rows,label){
       <span class="rd-p ${r.rateH==null?'flat':(r.rateH>=0?'up-red':'down-green')}">${r.rateH==null?'—':(r.rateH>=0?'▲ ':'▼ ')+Math.abs(r.rateH).toFixed(1)+'%'}</span>
     </div>`).join("");
   return `<div class="ring-card">
-    <div class="ring-box"><svg viewBox="0 0 130 130" width="${sz}" height="${sz}" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
+    <div class="ring-box"><svg viewBox="0 0 130 130" width="${sz}" height="${sz}" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g></svg><div class="ring-cap">外环 订单占比<br>内环 退订率</div></div>
     <div class="ring-legend">
       <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars"></span><span class="rd-p">订单量</span><span class="rd-p">环比</span><span class="rd-p">占比</span><span class="rd-p">退订数</span><span class="rd-p">退订率</span><span class="rd-p">退订率环比</span></div>
       ${legend}
