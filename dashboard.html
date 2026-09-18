@@ -388,7 +388,7 @@
   /* 渠道类型/属性：环形图 + 图例（合并卡片）与联动高亮 */
   .ring-card{display:flex;gap:18px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);width:100%;box-sizing:border-box;}
   .ring-box{flex:0 0 auto;}
-  .ring-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
+  .ring-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:center;}
   .rd-head,.rd-row{display:grid;grid-template-columns:minmax(88px,1.1fr) minmax(200px,3.2fr) minmax(130px,auto) 76px 82px;gap:12px;align-items:center;font-size:12px;}
   .rd-v{text-align:right;}
   @media(max-width:720px){
@@ -2319,6 +2319,8 @@ function renderOneDim(prefix,dayMap,label,granOverride){
 }
 // 环形图 + 图例（图例即数据条）：外环=订单占比（彩色），内环=退订占比（灰阶，对应扇区置灰）
 function ringCard(rows,label){
+  // 行数少时用更小的环，避免卡片下方留出大片空白
+  const sz=rows.length<=2?104:(rows.length<=4?120:132);
   const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
   const colors=["#534AB7","#1D9E75","#BA7517","#D85A30","#888780","#185FA5","#993556","#3B6D11"];
   const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
@@ -2341,7 +2343,7 @@ function ringCard(rows,label){
       <span class="rd-p rd-pg">${(Math.min(100,Number(r.rate)||0)).toFixed(2)}%</span>
     </div>`).join("");
   return `<div class="ring-card">
-    <div class="ring-box"><svg viewBox="0 0 130 130" width="132" height="132" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
+    <div class="ring-box"><svg viewBox="0 0 130 130" width="${sz}" height="${sz}" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
     <div class="ring-legend">
       <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars">订单量 / 环比</span><span class="rd-v"></span><span class="rd-p">订单占比</span><span class="rd-p rd-pg">退订率</span></div>
       ${legend}
