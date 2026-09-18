@@ -599,6 +599,43 @@ if(/share=1/.test(location.search)){(function(){
     </div>
     <div class="sec-title" id="kpiTableTitle">各机构当月发展订单量及环比</div>
     <div class="table-wrap no-scroll"><table class="tx-table" id="kpiTable"></table></div>
+    <div class="sec" id="txTypeSec">
+      <div class="sec-title collapsible" onclick="toggleSec('txTypeSec')"><span class="chev">▾</span><span id="txTypeTitleText">渠道类型分析（周期内发展订单数量、占比 · 饼图）</span></div>
+      <div class="sec-body">
+        <div class="tx-note">按照渠道类型展示周期内的发展订单数量、占比，加饼图展示。</div>
+        <div class="chart-row" style="margin-top:6px;">
+          <div class="chart-box" id="txTypeCard" style="flex:1;min-width:240px;"><div id="txTypePie"></div></div>
+          <div class="chart-box" id="txTypeBarBox" style="display:none;"><div id="txTypeBar"></div></div>
+        </div>
+        <div class="table-wrap no-scroll" id="txTypeTableWrap" style="display:none;"><table class="tx-table" id="txTypeTable"></table></div>
+      </div>
+    </div>
+
+    <div class="sec" id="txAttrSec">
+      <div class="sec-title collapsible" onclick="toggleSec('txAttrSec')"><span class="chev">▾</span><span id="txAttrTitleText">渠道属性分析（周期内发展订单数量、占比 · 饼图）</span></div>
+      <div class="sec-body">
+        <div class="tx-note">按照渠道属性展示周期内的发展订单数量、占比，加饼图展示。</div>
+        <div class="chart-row" style="margin-top:6px;">
+          <div class="chart-box" id="txAttrCard" style="flex:1;min-width:240px;"><div id="txAttrPie"></div></div>
+          <div class="chart-box" id="txAttrBarBox" style="display:none;"><div id="txAttrBar"></div></div>
+        </div>
+        <div class="table-wrap no-scroll" id="txAttrTableWrap" style="display:none;"><table class="tx-table" id="txAttrTable"></table></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="sec-title">趋势（每日 / 月度订单数）</div>
+    <div class="chart-row trend-row">
+      <div class="trend-col">
+        <div class="sec-title" id="txDailyTitle">当月每日订单数趋势（发展订单 · 单位：笔）</div>
+        <div class="chart-box"><div id="txTrendCount"></div></div>
+      </div>
+      <div class="trend-col">
+        <div class="sec-title">月度订单数趋势（各月发展订单合计 · 单位：笔）</div>
+        <div class="chart-box"><div id="txTrendMonth"></div></div>
+      </div>
+    </div>
+
     <div class="sec-title">月度汇总（发展订单量 · 退订率 · 月环比）</div>
     <div class="table-wrap no-scroll"><table class="tx-table" id="monthlyTable"></table></div>
 
@@ -639,42 +676,6 @@ if(/share=1/.test(location.search)){(function(){
     </div>
 
     <div class="sec-duo">
-    <div class="sec" id="txTypeSec">
-      <div class="sec-title collapsible" onclick="toggleSec('txTypeSec')"><span class="chev">▾</span><span id="txTypeTitleText">渠道类型分析（周期内发展订单数量、占比 · 饼图）</span></div>
-      <div class="sec-body">
-        <div class="tx-note">按照渠道类型展示周期内的发展订单数量、占比，加饼图展示。</div>
-        <div class="chart-row" style="margin-top:6px;">
-          <div class="chart-box" id="txTypeCard" style="flex:1;min-width:240px;"><div id="txTypePie"></div></div>
-          <div class="chart-box" id="txTypeBarBox" style="display:none;"><div id="txTypeBar"></div></div>
-        </div>
-        <div class="table-wrap no-scroll" id="txTypeTableWrap" style="display:none;"><table class="tx-table" id="txTypeTable"></table></div>
-      </div>
-    </div>
-
-    <div class="sec" id="txAttrSec">
-      <div class="sec-title collapsible" onclick="toggleSec('txAttrSec')"><span class="chev">▾</span><span id="txAttrTitleText">渠道属性分析（周期内发展订单数量、占比 · 饼图）</span></div>
-      <div class="sec-body">
-        <div class="tx-note">按照渠道属性展示周期内的发展订单数量、占比，加饼图展示。</div>
-        <div class="chart-row" style="margin-top:6px;">
-          <div class="chart-box" id="txAttrCard" style="flex:1;min-width:240px;"><div id="txAttrPie"></div></div>
-          <div class="chart-box" id="txAttrBarBox" style="display:none;"><div id="txAttrBar"></div></div>
-        </div>
-        <div class="table-wrap no-scroll" id="txAttrTableWrap" style="display:none;"><table class="tx-table" id="txAttrTable"></table></div>
-      </div>
-    </div>
-    </div>
-
-    <div class="sec-title">趋势（每日 / 月度订单数）</div>
-    <div class="chart-row trend-row">
-      <div class="trend-col">
-        <div class="sec-title" id="txDailyTitle">当月每日订单数趋势（发展订单 · 单位：笔）</div>
-        <div class="chart-box"><div id="txTrendCount"></div></div>
-      </div>
-      <div class="trend-col">
-        <div class="sec-title">月度订单数趋势（各月发展订单合计 · 单位：笔）</div>
-        <div class="chart-box"><div id="txTrendMonth"></div></div>
-      </div>
-    </div>
   </section>
 
     </div>
