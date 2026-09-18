@@ -425,6 +425,16 @@
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 
   /* 渠道类型/渠道属性：实测横向并排在常见视口（1528/1280）下会裁切右侧列，故不做模块并排，保持上下堆叠 */
+
+  /* ===== 交易分析区：模块视觉顺序（仅调 order，不改 DOM，不影响任何数据联动）===== */
+  #txMainSec{display:flex;flex-direction:column;}
+  #txMainSec>h2,#txMainSec>.desc,#txMainSec>.tx-filter,#txMainSec>#chanWarn{order:0;}
+  #txOverviewTitle{order:1;} #txKpis{order:2;}
+  #txKpiTitle{order:3;} #txKpiPieBox{order:4;} #kpiTableTitle{order:5;} #txKpiTableWrapReal{order:6;}
+  #txMainSec>.sec-duo{order:7;}
+  #txTrendTitle{order:8;} #txMainSec>.trend-row{order:9;}
+  #txMonthlyTitle{order:20;} #txMonthlyWrap{order:21;}
+  #txSup{order:30;} #txProd{order:31;} #txDistSec{order:32;}
 </style>
 
 <script>
@@ -570,7 +580,7 @@ if(/share=1/.test(location.search)){(function(){
     <div class="list-col">
 
   <!-- 交易数据 -->
-  <section class="module">
+  <section class="module" id="txMainSec">
     <h2>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
       交易数据
@@ -587,20 +597,21 @@ if(/share=1/.test(location.search)){(function(){
       <span class="fl-val" id="txScopeLabel">全部时间（累计）</span>
     </div>
 
-    <div class="sec-title" >周期数据概览（关联数据周期筛选）</div>
+    <div class="sec-title" id="txOverviewTitle">周期数据概览（关联数据周期筛选）</div>
     <div class="kpis" id="txKpis"></div>
 
     <div class="chan-warn hidden" id="chanWarn" onclick="goChanMap()"><span id="chanWarnText"></span><span class="cw-go">点击补充 →</span></div>
 
-    <div class="sec-title">关键指标（机构发展订单量 · 饼图 + 当月发展订单数量 + 环比同期）</div>
-    <div class="chart-box">
+    <div class="sec-title" id="txKpiTitle">关键指标（机构发展订单量 · 饼图 + 当月发展订单数量 + 环比同期）</div>
+    <div class="chart-box" id="txKpiPieBox">
       <h3 id="kpiPieTitle">各机构发展订单量占比（饼图）</h3>
       <div id="kpiPie"></div>
     </div>
     <div class="sec-title" id="kpiTableTitle">各机构当月发展订单量及环比</div>
-    <div class="table-wrap no-scroll"><table class="tx-table" id="kpiTable"></table></div>
-    <div class="sec-title">月度汇总（发展订单量 · 退订率 · 月环比）</div>
-    <div class="table-wrap no-scroll"><table class="tx-table" id="monthlyTable"></table></div>
+    <div class="table-wrap no-scroll" id="txKpiTableWrap" style="display:none"></div>
+    <div class="table-wrap no-scroll" id="txKpiTableWrapReal"><table class="tx-table" id="kpiTable"></table></div>
+    <div class="sec-title" id="txMonthlyTitle">月度汇总（发展订单量 · 退订率 · 月环比）</div>
+    <div class="table-wrap no-scroll" id="txMonthlyWrap"><table class="tx-table" id="monthlyTable"></table></div>
 
     <div class="sec" id="txSup">
       <div class="sec-title collapsible" onclick="toggleSec('txSup')"><span class="chev">▾</span><span id="txSupTitleText">供货方分析（发展订单数 + 环比 + 退订数 + 退订率）</span></div>
@@ -664,7 +675,7 @@ if(/share=1/.test(location.search)){(function(){
     </div>
     </div>
 
-    <div class="sec-title">趋势（每日 / 月度订单数）</div>
+    <div class="sec-title" id="txTrendTitle">趋势（每日 / 月度订单数）</div>
     <div class="chart-row trend-row">
       <div class="trend-col">
         <div class="sec-title" id="txDailyTitle">当月每日订单数趋势（发展订单 · 单位：笔）</div>
