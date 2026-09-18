@@ -419,9 +419,12 @@
   .rd-tip{font-size:11.5px;color:var(--muted);margin-top:2px;}
   [data-dimgroup] [data-dimk]{transition:opacity .15s,transform .15s;}
   [data-dimgroup].dimmed [data-dimk]{opacity:.32;}
-  [data-dimgroup] [data-dimk].hl{opacity:1;transform:scale(1.02);}
+  /* 高亮只提亮自身、不加 transform：scale(1.02) 会把 531px 的整行放大 ~10px → 触发横向滚动条 */
+  [data-dimgroup] [data-dimk].hl{opacity:1;}
   [data-dimgroup] svg [data-dimk]{transition:stroke-width .15s,opacity .15s;}
-  [data-dimgroup] svg [data-dimk].hl{stroke-width:20;}
+  /* 高亮时按环带各自加粗：原来统一改成 20 会让「内环 r38+20」与「外环 r52+20」相交，灰环盖住彩环（遮盖） */
+  [data-dimgroup] svg circle.rk-out[data-dimk].hl{stroke-width:23.5;}   /* 外环：37.25~60.75 */
+  [data-dimgroup] svg circle.rk-in[data-dimk].hl{stroke-width:15.5;}    /* 内环：19.75~35.25，与外环不重叠 */
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 
   /* 渠道类型/渠道属性：环形图缩到「机构饼图」同尺寸(110px) + 图例收窄 → 双列宽屏可并排 */
@@ -2360,7 +2363,8 @@ function renderOneDim(prefix,dayMap,label,granOverride){
 function ringCard(rows,label){
   // 行数少时用更小的环，避免卡片下方留出大片空白
   const sz=rows.length<=2?96:(rows.length<=4?112:124);
-  const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
+  // 环内已无文字 → 环带向内加粗：外环 15→21（外缘仍 59.5），内环 9→14，两带间留 4 空隙
+  const R1=49,R2=27.5,SW1=21,SW2=14,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
   const colors=PALETTE;   // 与「机构饼图」统一配色（原为深色系，显得偏深）
   const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
   let cum=0,segs="",segs2="";
@@ -2370,8 +2374,8 @@ function ringCard(rows,label){
     const l1=C1*frac;                       // 外环：订单占比弧长
     const l2=C2*frac*(ratePct/100);         // 内环：外环段弧长 × 退订率（恒不超外环段）
     // 起点按「角度」对齐：外环用 -C1*cum，内环换算到自身周长用 -C2*cum（关键：不能直接复用外环弧长）
-    segs+=`<circle r="${R1}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="15" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-C1*cum).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
-    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="9" stroke-dasharray="${Math.max(0.8,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-C2*cum).toFixed(1)}" opacity=".95" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订率 ${ratePct.toFixed(2)}%（内环段 = 该渠道外环段 × 退订率，起点与外环同角度对齐）</title></circle>`;
+    segs+=`<circle r="${R1}" fill="none" class="rk-out" stroke="${colors[i%colors.length]}" stroke-width="${SW1}" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-C1*cum).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
+    segs2+=`<circle r="${R2}" fill="none" class="rk-in" stroke="${grays[i%grays.length]}" stroke-width="${SW2}" stroke-dasharray="${Math.max(0.8,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-C2*cum).toFixed(1)}" opacity=".95" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订率 ${ratePct.toFixed(2)}%（内环段 = 该渠道外环段 × 退订率，起点与外环同角度对齐）</title></circle>`;
     cum+=frac;
   });
   const legend=rows.map((r,i)=>`<div class="rd-row" data-dimk="${esc(r.k)}">
