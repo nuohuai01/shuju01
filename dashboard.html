@@ -424,13 +424,13 @@
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 
   /* 渠道类型 / 渠道属性：双列（wide）宽屏时并排，提高空间利用率；单列保持上下堆叠 */
-  @media(min-width:1600px){
-    body.layout-wide .sec-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+  @media(min-width:1440px){
+    body.layout-wide .sec-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;}
     body.layout-wide .sec-duo>.sec{min-width:0;}
     body.layout-wide .sec-duo .ring-card{justify-content:flex-start;gap:8px;}
     body.layout-wide .sec-duo .ring-legend{flex:1 1 auto;max-width:none;}
-    body.layout-wide .sec-duo .rd-head,body.layout-wide .sec-duo .rd-row{grid-template-columns:58px 84px 44px 46px 40px 42px 42px 54px;gap:5px;font-size:11px;}
-    body.layout-wide .sec-duo .ring-box svg{width:clamp(76px,5vw,96px);}
+    body.layout-wide .sec-duo .rd-head,body.layout-wide .sec-duo .rd-row{grid-template-columns:52px 76px 42px 42px 38px 40px 40px 50px;gap:4px;font-size:10.5px;}
+    body.layout-wide .sec-duo .ring-box svg{width:clamp(72px,4.6vw,88px);}
     body.layout-wide .sec-duo .sec-title{font-size:12.5px;}
     body.layout-wide .sec-duo .tx-note{font-size:11.5px;}
   }
@@ -2587,7 +2587,9 @@ try{
   if(__pv){
     var __t=new Date(performance.timeOrigin||Date.now());
     var __pad=function(n){return n<10?("0"+n):(""+n);};
-    __pv.textContent="v2026-09-18-1420 · 加载于 "+__pad(__t.getHours())+":"+__pad(__t.getMinutes())+":"+__pad(__t.getSeconds());
+    var __vtxt=function(){return "v2026-09-18-1440 · 加载于 "+__pad(__t.getHours())+":"+__pad(__t.getMinutes())+":"+__pad(__t.getSeconds())+" · 视口 "+window.innerWidth+"×"+window.innerHeight;};
+    __pv.textContent=__vtxt();
+    window.addEventListener("resize",function(){try{__pv.textContent=__vtxt();}catch(e){}});
   }
 }catch(e){}
 </script>
