@@ -389,12 +389,12 @@
   .ring-card{display:flex;gap:14px;align-items:center;padding:2px 0;border:0;background:transparent;width:100%;box-sizing:border-box;}
   .ring-box{flex:0 0 auto;}
   .ring-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:center;}
-  .rd-head,.rd-row{display:grid;grid-template-columns:minmax(70px,1fr) minmax(100px,1.8fr) minmax(86px,auto) 58px 56px 60px 72px;gap:8px;align-items:center;font-size:11.5px;min-width:0;}
+  .rd-head,.rd-row{display:grid;grid-template-columns:minmax(64px,1fr) minmax(84px,1.6fr) 62px 62px 52px 54px 54px 66px;gap:7px;align-items:center;font-size:11.5px;min-width:0;}
   .rd-v{text-align:right;}
   @media(max-width:720px){
     .ring-card{flex-direction:column;align-items:stretch;gap:12px;}
     .ring-box{align-self:center;}
-    .rd-head,.rd-row{grid-template-columns:minmax(56px,1fr) minmax(70px,1.8fr) auto 52px 50px 52px 62px;gap:6px;font-size:11.5px;}
+    .rd-head,.rd-row{grid-template-columns:minmax(52px,1fr) minmax(60px,1.4fr) 54px 54px 46px 48px 48px 58px;gap:5px;font-size:11px;}
   }
   .rd-head{color:var(--muted);font-size:11.5px;}
   .rd-row{cursor:pointer;transition:opacity .15s,transform .15s;}
@@ -407,6 +407,9 @@
   .rd-v{text-align:right;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis;}
   .rd-v em{font-style:normal;font-size:11.5px;}
   .rd-p{text-align:right;color:var(--text);font-variant-numeric:tabular-nums;}
+  .rd-p.up-red{color:var(--red);font-weight:600;}
+  .rd-p.down-green{color:var(--green);font-weight:600;}
+  .rd-p.flat{color:var(--muted);}
   .rd-pg{color:var(--muted);}
   .rd-tip{font-size:11.5px;color:var(--muted);margin-top:2px;}
   [data-dimgroup] [data-dimk]{transition:opacity .15s,transform .15s;}
@@ -2338,18 +2341,18 @@ function ringCard(rows,label){
   const legend=rows.map((r,i)=>`<div class="rd-row" data-dimk="${esc(r.k)}">
       <span class="rd-nm" title="${esc(r.k)}">${esc(r.k)}</span>
       <span class="rd-bars"><span class="rd-bar"><i style="width:${Math.max(1,r.pct).toFixed(1)}%;background:${colors[i%colors.length]}"></i></span><span class="rd-bar rd-gray"><i style="width:${Math.max(1,Math.min(100,Number(r.rate)||0)).toFixed(1)}%"></i></span></span>
-      <span class="rd-v">${fmt(r.dev)}${r.hb==null?'':` <em class="${r.hb>=0?'up':'down'}">${r.hb>=0?'▲':'▼'}${Math.abs(r.hb).toFixed(1)}%</em>`}</span>
+      <span class="rd-v">${fmt(r.dev)}</span>
+      <span class="rd-p ${r.hb==null?'flat':(r.hb>=0?'up-red':'down-green')}">${r.hb==null?'—':(r.hb>=0?'▲ ':'▼ ')+Math.abs(r.hb).toFixed(1)+'%'}</span>
       <span class="rd-p">${r.pct.toFixed(1)}%</span>
       <span class="rd-p">${fmt(r.unsub)}</span>
       <span class="rd-p">${(Math.min(100,Number(r.rate)||0)).toFixed(2)}%</span>
-      <span class="rd-p ${r.rateH==null?'flat':(r.rateH>=0?'up':'down')}">${r.rateH==null?'—':(r.rateH>=0?'▲ ':'▼ ')+Math.abs(r.rateH).toFixed(1)+'%'}</span>
+      <span class="rd-p ${r.rateH==null?'flat':(r.rateH>=0?'up-red':'down-green')}">${r.rateH==null?'—':(r.rateH>=0?'▲ ':'▼ ')+Math.abs(r.rateH).toFixed(1)+'%'}</span>
     </div>`).join("");
   return `<div class="ring-card">
     <div class="ring-box"><svg viewBox="0 0 130 130" width="${sz}" height="${sz}" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
     <div class="ring-legend">
-      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars"></span><span class="rd-v">订单量 / 环比</span><span class="rd-p">占比</span><span class="rd-p">退订数</span><span class="rd-p">退订率</span><span class="rd-p">退订率环比</span></div>
+      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars"></span><span class="rd-p">订单量</span><span class="rd-p">环比</span><span class="rd-p">占比</span><span class="rd-p">退订数</span><span class="rd-p">退订率</span><span class="rd-p">退订率环比</span></div>
       ${legend}
-      <div class="rd-tip">内环段长 = 外环段长 × 该渠道退订率（起点对齐，永不超过外环）；悬停联动高亮 · 点击锁定 · 再点或点空白复原</div>
     </div>
   </div>`;
 }
