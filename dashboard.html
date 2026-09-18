@@ -2316,15 +2316,16 @@ function ringCard(rows,label){
   const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
   const colors=["#534AB7","#1D9E75","#BA7517","#D85A30","#888780","#185FA5","#993556","#3B6D11"];
   const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
-  let off1=0,segs="",segs2="";
+  let cum=0,segs="",segs2="";
   rows.forEach((r,i)=>{
-    const l1=C1*(r.pct/100);
+    const frac=(Number(r.pct)||0)/100;
     const ratePct=Math.min(100,Math.max(0,Number(r.rate)||0));
-    // 内环段长 = 外环段长 × 该渠道退订率（因此永远不超出外环段）；起点与外环对应扇区对齐
-    const l2=C2*((r.pct/100)*(ratePct/100));
-    segs+=`<circle r="${R1}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="15" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-off1).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
-    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="8" stroke-dasharray="${Math.max(0.8,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-off1).toFixed(1)}" opacity=".95" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订率 ${ratePct.toFixed(2)}%（内环长=外环段×退订率）</title></circle>`;
-    off1+=l1;
+    const l1=C1*frac;                       // 外环：订单占比弧长
+    const l2=C2*frac*(ratePct/100);         // 内环：外环段弧长 × 退订率（恒不超外环段）
+    // 起点按「角度」对齐：外环用 -C1*cum，内环换算到自身周长用 -C2*cum（关键：不能直接复用外环弧长）
+    segs+=`<circle r="${R1}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="15" stroke-dasharray="${l1.toFixed(1)} ${C1.toFixed(1)}" stroke-dashoffset="${(-C1*cum).toFixed(1)}" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 订单占比 ${r.pct.toFixed(1)}%</title></circle>`;
+    segs2+=`<circle r="${R2}" fill="none" stroke="${grays[i%grays.length]}" stroke-width="9" stroke-dasharray="${Math.max(0.8,l2).toFixed(1)} ${C2.toFixed(1)}" stroke-dashoffset="${(-C2*cum).toFixed(1)}" opacity=".95" data-dimk="${esc(r.k)}"><title>${esc(r.k)} 退订率 ${ratePct.toFixed(2)}%（内环段 = 该渠道外环段 × 退订率，起点与外环同角度对齐）</title></circle>`;
+    cum+=frac;
   });
   const legend=rows.map((r,i)=>`<div class="rd-row" data-dimk="${esc(r.k)}">
       <span class="rd-nm" title="${esc(r.k)}">${esc(r.k)}</span>
