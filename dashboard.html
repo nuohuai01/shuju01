@@ -2358,7 +2358,7 @@ function ringCard(rows,label){
   // 行数少时用更小的环，避免卡片下方留出大片空白
   const sz=rows.length<=2?96:(rows.length<=4?112:124);
   const R1=52,R2=38,C1=2*Math.PI*R1,C2=2*Math.PI*R2;
-  const colors=["#534AB7","#1D9E75","#BA7517","#D85A30","#888780","#185FA5","#993556","#3B6D11"];
+  const colors=PALETTE;   // 与「机构饼图」统一配色（原为深色系，显得偏深）
   const grays=["#8b93a1","#a5abb7","#bcc1ca","#cfd4db","#dee2e7","#aab0bb","#c4c9d1","#d6dae0"];
   let cum=0,segs="",segs2="";
   rows.forEach((r,i)=>{
