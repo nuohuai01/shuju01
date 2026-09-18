@@ -424,20 +424,7 @@
   [data-dimgroup] svg [data-dimk].hl{stroke-width:20;}
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
 
-  /* 渠道类型 / 渠道属性：双列（wide）宽屏时并排，提高空间利用率；单列保持上下堆叠 */
-  @media(min-width:1360px){
-    body.layout-wide .sec-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;}
-    body.layout-wide .sec-duo>.sec{min-width:0;}
-    /* 并排时每块内部改纵向：环形图在上、图例在下 → 宽度需求大幅降低，窄屏副屏也能完整并排 */
-    body.layout-wide .sec-duo .ring-card{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;}
-    body.layout-wide .sec-duo .ring-box{align-self:center;}
-    body.layout-wide .sec-duo .ring-legend{flex:1 1 auto;max-width:none;}
-    body.layout-wide .sec-duo .rd-head,body.layout-wide .sec-duo .rd-row{grid-template-columns:52px minmax(50px,1fr) 44px 50px 42px 42px 42px 52px;gap:5px;font-size:10.5px;}
-    body.layout-wide .sec-duo .ring-legend{overflow-x:auto;}
-    body.layout-wide .sec-duo .ring-box svg{width:clamp(72px,4.6vw,88px);}
-    body.layout-wide .sec-duo .sec-title{font-size:12.5px;}
-    body.layout-wide .sec-duo .tx-note{font-size:11.5px;}
-  }
+  /* 渠道类型/渠道属性：实测横向并排在常见视口（1528/1280）下会裁切右侧列，故不做模块并排，保持上下堆叠 */
 </style>
 
 <script>
