@@ -386,15 +386,15 @@
   #monthlyTable td.nm{min-width:78px;}
 
   /* 渠道类型/属性：环形图 + 图例（合并卡片）与联动高亮 */
-  .ring-card{display:flex;gap:14px;align-items:center;padding:2px 0;border:0;background:transparent;width:100%;box-sizing:border-box;}
+  .ring-card{display:flex;gap:16px;align-items:center;justify-content:center;padding:2px 0;border:0;background:transparent;width:100%;box-sizing:border-box;}
   .ring-box{flex:0 0 auto;}
   .ring-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;justify-content:center;}
-  .rd-head,.rd-row{display:grid;grid-template-columns:minmax(64px,1fr) minmax(84px,1.6fr) 62px 62px 52px 54px 54px 66px;gap:7px;align-items:center;font-size:11.5px;min-width:0;}
+  .rd-head,.rd-row{display:grid;grid-template-columns:minmax(76px,auto) minmax(110px,230px) 58px 60px 50px 52px 54px 68px;gap:10px;align-items:center;font-size:11.5px;min-width:0;}
   .rd-v{text-align:right;}
   @media(max-width:720px){
     .ring-card{flex-direction:column;align-items:stretch;gap:12px;}
     .ring-box{align-self:center;}
-    .rd-head,.rd-row{grid-template-columns:minmax(52px,1fr) minmax(60px,1.4fr) 54px 54px 46px 48px 48px 58px;gap:5px;font-size:11px;}
+    .rd-head,.rd-row{grid-template-columns:minmax(52px,auto) minmax(60px,140px) 52px 54px 46px 48px 48px 60px;gap:6px;font-size:11px;}
   }
   .rd-head{color:var(--muted);font-size:11.5px;}
   .rd-row{cursor:pointer;transition:opacity .15s,transform .15s;}
