@@ -422,6 +422,18 @@
   [data-dimgroup] svg [data-dimk]{transition:stroke-width .15s,opacity .15s;}
   [data-dimgroup] svg [data-dimk].hl{stroke-width:20;}
   [data-dimgroup] tr[data-dimk].hl td{background:#f3f5ff;}
+
+  /* 渠道类型 / 渠道属性：双列（wide）宽屏时并排，提高空间利用率；单列保持上下堆叠 */
+  @media(min-width:1600px){
+    body.layout-wide .sec-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+    body.layout-wide .sec-duo>.sec{min-width:0;}
+    body.layout-wide .sec-duo .ring-card{justify-content:flex-start;gap:8px;}
+    body.layout-wide .sec-duo .ring-legend{flex:1 1 auto;max-width:none;}
+    body.layout-wide .sec-duo .rd-head,body.layout-wide .sec-duo .rd-row{grid-template-columns:58px 84px 44px 46px 40px 42px 42px 54px;gap:5px;font-size:11px;}
+    body.layout-wide .sec-duo .ring-box svg{width:clamp(76px,5vw,96px);}
+    body.layout-wide .sec-duo .sec-title{font-size:12.5px;}
+    body.layout-wide .sec-duo .tx-note{font-size:11.5px;}
+  }
 </style>
 
 <script>
@@ -635,6 +647,7 @@ if(/share=1/.test(location.search)){(function(){
       </div>
     </div>
 
+    <div class="sec-duo">
     <div class="sec" id="txTypeSec">
       <div class="sec-title collapsible" onclick="toggleSec('txTypeSec')"><span class="chev">▾</span><span id="txTypeTitleText">渠道类型分析（周期内发展订单数量、占比 · 饼图）</span></div>
       <div class="sec-body">
@@ -657,6 +670,7 @@ if(/share=1/.test(location.search)){(function(){
         </div>
         <div class="table-wrap no-scroll" id="txAttrTableWrap" style="display:none;"><table class="tx-table" id="txAttrTable"></table></div>
       </div>
+    </div>
     </div>
 
     <div class="sec-title">趋势（每日 / 月度订单数）</div>
