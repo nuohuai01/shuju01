@@ -2339,15 +2339,15 @@ function ringCard(rows,label){
       <span class="rd-nm" title="${esc(r.k)}">${esc(r.k)}</span>
       <span class="rd-bars"><span class="rd-bar"><i style="width:${Math.max(1,r.pct).toFixed(1)}%;background:${colors[i%colors.length]}"></i></span><span class="rd-bar rd-gray"><i style="width:${Math.max(1,Math.min(100,Number(r.rate)||0)).toFixed(1)}%"></i></span></span>
       <span class="rd-v">${fmt(r.dev)}${r.hb==null?'':` <em class="${r.hb>=0?'up':'down'}">${r.hb>=0?'▲':'▼'}${Math.abs(r.hb).toFixed(1)}%</em>`}</span>
-      <span class="rd-p">${fmt(r.unsub)}</span>
       <span class="rd-p">${r.pct.toFixed(1)}%</span>
+      <span class="rd-p">${fmt(r.unsub)}</span>
       <span class="rd-p">${(Math.min(100,Number(r.rate)||0)).toFixed(2)}%</span>
       <span class="rd-p ${r.rateH==null?'flat':(r.rateH>=0?'up':'down')}">${r.rateH==null?'—':(r.rateH>=0?'▲ ':'▼ ')+Math.abs(r.rateH).toFixed(1)+'%'}</span>
     </div>`).join("");
   return `<div class="ring-card">
     <div class="ring-box"><svg viewBox="0 0 130 130" width="${sz}" height="${sz}" role="img" aria-label="${esc(label)}占比环形图"><g transform="translate(65,65) rotate(-90)">${segs}${segs2}</g><text x="65" y="62" text-anchor="middle" font-size="10.5" fill="#888780">外环 订单占比</text><text x="65" y="76" text-anchor="middle" font-size="10.5" fill="#888780">内环 退订率</text></svg></div>
     <div class="ring-legend">
-      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars">订单量 / 环比</span><span class="rd-v"></span><span class="rd-p">退订数</span><span class="rd-p">占比</span><span class="rd-p">退订率</span><span class="rd-p">退订率环比</span></div>
+      <div class="rd-head"><span class="rd-nm">${esc(label)}</span><span class="rd-bars"></span><span class="rd-v">订单量 / 环比</span><span class="rd-p">占比</span><span class="rd-p">退订数</span><span class="rd-p">退订率</span><span class="rd-p">退订率环比</span></div>
       ${legend}
       <div class="rd-tip">内环段长 = 外环段长 × 该渠道退订率（起点对齐，永不超过外环）；悬停联动高亮 · 点击锁定 · 再点或点空白复原</div>
     </div>
