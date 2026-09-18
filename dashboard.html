@@ -1937,7 +1937,9 @@ function renderTx(){
   const mList=txY?(per.monthsByYear[txY]||[]):per.allMonths;
   mSel.innerHTML='<option value="">全部月份</option>'+[...mList].sort().map(m=>`<option value="${m}">${parseInt(m,10)}月</option>`).join("");mSel.value=txM;
   const dList=(txY&&txM)?(per.daysByMonth[txY+"-"+txM]||[]):(txM?(()=>{const a=[];for(const k in per.daysByMonth)if(k.endsWith("-"+txM))a.push(...per.daysByMonth[k]);return a;})():[]);
-  const dFirstLabel=(txY&&txM)?`全部日期（${dList.length} 天有数据）`:(txM?`全部日期（${dList.length} 天有数据 · 跨年聚合）`:"全部日期");
+  // per.daysByMonth 的值是 Set，Set 没有 .length（原来直接取 .length → 首项显示「undefined 天有数据」）
+  const dCount=(dList&&typeof dList.length==="number")?dList.length:((dList&&dList.size)||0);
+  const dFirstLabel=(txY&&txM)?`全部日期（${dCount} 天有数据）`:(txM?`全部日期（${dCount} 天有数据 · 跨年聚合）`:"全部日期");
   dSel.innerHTML=`<option value="">${dFirstLabel}</option>`+[...new Set(dList)].sort().map(dd=>`<option value="${dd}">${dd}日</option>`).join("");dSel.value=txD;
   const sl=document.getElementById("txScopeLabel");if(sl)sl.textContent=scopeLabel();
   // ---- 一次主遍历：KPI / 每日索引 / 月度 / 全部日期（合并原多次重复遍历）----
