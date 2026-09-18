@@ -442,7 +442,7 @@ if(/share=1/.test(location.search)){(function(){
       </div>
       <div>
         <h1>数据看板</h1>
-        <p>任务 · 交易数据 · 导入</p>
+        <p>任务 · 交易数据 · 导入 · <span id="pageVer" style="color:var(--primary);font-weight:600">v2026-09-18-1420</span></p>
       </div>
     </div>
     <div class="toolbar">
@@ -2564,6 +2564,14 @@ document.addEventListener("click",function(e){
 });
 function renderAll(){renderTasks();renderMetrics();renderTx();renderMonthly();checkAlert();}
 renderAll();
+try{
+  var __pv=document.getElementById("pageVer");
+  if(__pv){
+    var __t=new Date(performance.timeOrigin||Date.now());
+    var __pad=function(n){return n<10?("0"+n):(""+n);};
+    __pv.textContent="v2026-09-18-1420 · 加载于 "+__pad(__t.getHours())+":"+__pad(__t.getMinutes())+":"+__pad(__t.getSeconds());
+  }
+}catch(e){}
 </script>
 </body>
 </html>
