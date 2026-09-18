@@ -172,6 +172,9 @@
   .legend .legend-hd .u{font-weight:400;color:var(--muted);font-size:10px;margin-left:1px;}
   .pie-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .pie-wrap svg{flex-shrink:0;}
+  /* 机构饼图联动：可点可悬停 */
+  .pie-wrap svg path[data-dimk],.legend .li[data-dimk]{cursor:pointer;}
+  .legend .li[data-dimk]:hover .ln{color:var(--accent,#4f46e5);}
   #kpiPie .pie-wrap{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:18px;width:100%;}
   #kpiPie .pie-wrap svg{width:clamp(96px,16vw,140px);height:clamp(96px,16vw,140px);}
   #kpiPie .legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:5px 16px;flex:1;min-width:200px;}
@@ -1306,7 +1309,12 @@ function renderMetrics(){
     if(boxTable)boxTable.innerHTML='<div class="empty">该范围无数据</div>';
     return;
   }
-  if(boxPie)boxPie.innerHTML=pieSVG(rows.map((r,i)=>({n:supplierLabel(r.sp),val:r.dev,color:PALETTE[i%PALETTE.length],hb:r.hb})),"机构");
+  if(boxPie){
+    boxPie.innerHTML=pieSVG(rows.map((r,i)=>({n:supplierLabel(r.sp),k:r.sp,val:r.dev,color:PALETTE[i%PALETTE.length],hb:r.hb})),"机构");
+    // 机构饼图：声明联动组 → 悬停切片/图例时高亮该机构、其余淡出（与渠道环形图同一套机制）
+    const _pg=document.getElementById("txKpiPieBox");
+    if(_pg)_pg.setAttribute("data-dimgroup","kpiPie");
+  }
   if(boxTable)boxTable.innerHTML=`<thead><tr><th>机构</th><th>发展订单量<span class="u">（笔）</span></th><th>占比<span class="u">（%）</span></th><th>环比<span class="u">（上期，%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>`+
     rows.map(r=>{const pct=total>0?r.dev/total*100:0;const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');const rc=r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981';const short=supplierLabel(r.sp);
       var rateH=null,rateHCls='';
@@ -2406,11 +2414,11 @@ function pieSVG(items,label){
     const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang);
     const x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
     const large=frac>0.5?1:0;
-    paths+=`<path d="M${cx} ${cy} L${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${it.color}"/>`;
+    paths+=`<path d="M${cx} ${cy} L${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${it.color}" data-dimk="${esc(it.k||it.n)}"><title>${esc(it.n)}：${fmt(it.val)} 笔 · ${(it.val/total*100).toFixed(1)}%</title></path>`;
     ang=a2;
   });
   const hd=`<div class="li legend-hd"><span class="sw"></span><span class="ln">${esc(label||"名称")}</span><span class="lv">订单量<span class="u">（笔）</span></span><span class="lhb">环比<span class="u">（%）</span></span><span class="lp">占比<span class="u">（%）</span></span></div>`;
-  let legend=`<div class="legend">${hd}${items.map(it=>{const hbTxt=it.hb==null?'—':(it.hb>=0?'▲ +':'▼ ')+it.hb.toFixed(1)+'%';const hbCls=it.hb==null?'flat':(it.hb>=0?'up':'down');return `<div class="li"><span class="sw" style="background:${it.color}"></span><span class="ln" title="${esc(it.n)}">${esc(it.n)}</span><span class="lv">${fmt(it.val)}</span><span class="lhb ${hbCls}">${hbTxt}</span><span class="lp">${(it.val/total*100).toFixed(1)}%</span></div>`;}).join("")}</div>`;
+  let legend=`<div class="legend">${hd}${items.map(it=>{const hbTxt=it.hb==null?'—':(it.hb>=0?'▲ +':'▼ ')+it.hb.toFixed(1)+'%';const hbCls=it.hb==null?'flat':(it.hb>=0?'up':'down');return `<div class="li" data-dimk="${esc(it.k||it.n)}"><span class="sw" style="background:${it.color}"></span><span class="ln" title="${esc(it.n)}">${esc(it.n)}</span><span class="lv">${fmt(it.val)}</span><span class="lhb ${hbCls}">${hbTxt}</span><span class="lp">${(it.val/total*100).toFixed(1)}%</span></div>`;}).join("")}</div>`;
   return `<div class="pie-wrap" style="width:100%;justify-content:center;"><svg viewBox="0 0 140 140" width="100" height="100">${paths}<circle cx="${cx}" cy="${cy}" r="26" fill="#fff"/></svg>${legend}</div>`;
 }
 function barShare(data,label){
