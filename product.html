@@ -54,22 +54,48 @@
   .btn-add:hover{opacity:.85;}
   .del-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;cursor:pointer;transition:background .12s;white-space:nowrap;}
   .del-btn:hover{background:#fee2e2;}
-  .ops{display:flex;align-items:center;gap:6px;justify-content:flex-end;white-space:nowrap;}
+  .ops{display:table-cell;text-align:right;vertical-align:middle;white-space:normal;}   /* 不能是 flex：td 用 flex 会脱离表格单元格，固定布局下该列会塌掉 */
+  .ops>.linkbtn,.ops>.del-btn{margin-left:6px;}
   .sup-label{font-size:13px;color:var(--muted);margin-right:4px;}
   .sup-select{min-height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:13px;background:#fff;color:var(--text);max-width:380px;font-family:inherit;}
   .sel-in{max-width:180px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:#fff;font-size:12px;font-family:inherit;color:var(--text);}
   .sel-in:focus,.txt-in:focus,.num-in:focus{outline:none;border-color:var(--primary);}
   .tbl.fixed{table-layout:fixed;width:100%;}
-  /* 列宽自适应：名称列给足宽度，数值/按钮列收窄 */
-  /* 百分比列宽：随容器等比自适应，既不空也不挤 */
-  #tblStock th:nth-child(1),#tblStock td:nth-child(1){white-space:normal;line-height:1.35;overflow:visible;text-overflow:clip;}
+  /* ===== 表格自适应：固定布局 + 百分比列宽 =====
+     目标：任何窗口宽度下都不出现「表格内部滚动条」和「页面横向滚动条」；
+     列宽只随可用宽度等比变化 → 与分辨率/屏幕比例切换无关，不会跳版。 */
+  #tblStock,#tblBroad{table-layout:fixed;width:100%;}
+  #tblStock th,#tblStock td,#tblBroad th,#tblBroad td{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+  #tblStock td:nth-child(1){white-space:normal;line-height:1.35;overflow:hidden;text-overflow:clip;}
   #tblStock td:first-child .txt-in{white-space:normal;}
+  #tblStock td:last-child,#tblStock th:last-child{overflow:hidden;text-overflow:clip;}
+  #tblBroad td:nth-child(1){white-space:normal;line-height:1.35;}
+  /* 权益包台账（8 列）比例列宽 */
+  #tblStock th:nth-child(1),#tblStock td:nth-child(1){width:21%;}
+  #tblStock th:nth-child(2),#tblStock td:nth-child(2){width:9%;}
   #tblStock th:nth-child(3),#tblStock td:nth-child(3){width:9%;}
-  #tblStock th:nth-child(4),#tblStock td:nth-child(4){width:13%;}
+  #tblStock th:nth-child(4),#tblStock td:nth-child(4){width:12%;}
   #tblStock th:nth-child(5),#tblStock td:nth-child(5){width:12%;}
   #tblStock th:nth-child(6),#tblStock td:nth-child(6){width:12%;}
-  #tblStock th:nth-child(7),#tblStock td:nth-child(7){width:9%;}
-  #tblStock th:nth-child(8),#tblStock td:nth-child(8){width:8%;}
+  #tblStock th:nth-child(7),#tblStock td:nth-child(7){width:10%;}
+  #tblStock th:nth-child(8),#tblStock td:nth-child(8){width:15%;}
+  /* 宽带台账（11 列）比例列宽 */
+  #tblBroad th:nth-child(1),#tblBroad td:nth-child(1){width:17%;}
+  #tblBroad th:nth-child(2),#tblBroad td:nth-child(2){width:9%;}
+  #tblBroad th:nth-child(3),#tblBroad td:nth-child(3){width:6%;}
+  #tblBroad th:nth-child(4),#tblBroad td:nth-child(4){width:5%;}
+  #tblBroad th:nth-child(5),#tblBroad td:nth-child(5){width:5%;}
+  #tblBroad th:nth-child(6),#tblBroad td:nth-child(6){width:5%;}
+  #tblBroad th:nth-child(7),#tblBroad td:nth-child(7){width:8%;}
+  #tblBroad th:nth-child(8),#tblBroad td:nth-child(8){width:8%;}
+  #tblBroad th:nth-child(9),#tblBroad td:nth-child(9){width:11%;}
+  #tblBroad th:nth-child(10),#tblBroad td:nth-child(10){width:11%;}
+  #tblBroad th:nth-child(11),#tblBroad td:nth-child(11){width:15%;}
+  /* 单元格内控件：允许收缩到列宽；窄列时换行排布（而不是被裁掉）；宽屏仍是一行 */
+  #tblStock td .tg,#tblBroad td .tg{flex-wrap:wrap;max-width:100%;}
+  #tblStock td .tg-opt,#tblBroad td .tg-opt{padding:3px 7px;font-size:11.5px;}
+  #tblStock td .nm-txt,#tblStock td .txt-in,#tblStock td .num-in,#tblStock td .sel-in,
+  #tblBroad td .txt-in,#tblBroad td .num-in,#tblBroad td .sel-in{max-width:100%;box-sizing:border-box;}
   .tbl td,.tbl th{white-space:nowrap;}
   
   
@@ -156,6 +182,9 @@
     table.tbl{min-width:0!important;}
     #tblStock{min-width:0!important;}
     .tbl.fixed col{width:auto!important;}
+    /* 卡片模式下必须复位百分比列宽，否则每个 td 会变成 17%/9% 宽（一列一格） */
+    #tblStock th,#tblStock td,#tblBroad th,#tblBroad td{width:auto!important;min-width:0!important;max-width:none!important;overflow:visible;}
+    #tblBroad td:nth-child(1),#tblStock td:nth-child(1){white-space:normal!important;}
     .tbl thead,.tx-table thead{display:none;}
     .tbl tbody tr,.tx-table tbody tr{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
     .tbl tbody td,.tbl tbody tr td,.tx-table tbody td,.tx-table tbody tr td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #f1f5f9;}
@@ -177,16 +206,16 @@
   /* 操作列：按钮一行居中显示 */
 
   /* 名称列：纯文本显示（可换行），点击进入编辑 */
-  #tblStock td.nm-cell{white-space:normal!important;min-width:200px;max-width:340px;line-height:1.4;overflow-wrap:anywhere;word-break:break-word;}
+  #tblStock td.nm-cell{white-space:normal!important;min-width:0;max-width:none;line-height:1.4;overflow-wrap:anywhere;word-break:break-word;}
   #tblStock .nm-txt{display:block;white-space:normal;cursor:text;border-bottom:1px dashed transparent;}
   #tblStock .nm-txt:hover{color:var(--primary);border-bottom-color:var(--primary);}
   #tblStock .nm-txt.empty{color:var(--muted);}
-  #tblStock td.nm-cell input.txt-in{min-width:220px;}
+  #tblStock td.nm-cell input.txt-in{min-width:0;}
 
   /* 末两列保证最小宽度：避免按钮溢出到表格边框外 */
-  #tblStock th:nth-child(7),#tblStock td:nth-child(7){min-width:92px;}
-  #tblStock th:nth-child(7) input,#tblStock td:nth-child(7) input{width:100%;min-width:72px;}
-  #tblStock th:last-child,#tblStock td:last-child{min-width:124px;white-space:nowrap;}
+  #tblStock th:nth-child(7),#tblStock td:nth-child(7){min-width:0;}
+  #tblStock th:nth-child(7) input,#tblStock td:nth-child(7) input{width:100%;min-width:0;}
+  #tblStock th:last-child,#tblStock td:last-child{min-width:0;white-space:normal;}
   #tblStock td:last-child a,#tblStock td:last-child button{flex:0 0 auto;}
 
   /* ===== 窄屏（卡片化）修正：解除桌面端最小宽度约束，避免值溢出卡片 ===== */
@@ -204,22 +233,21 @@
   }
   /* ===== 窄屏/中屏：双列自动降为单列（避免并排挤压） ===== */
   @media(max-width:1100px){
-    body.layout-wide .wrap{overflow-x:auto;}
-  body.layout-wide .main-grid{flex-direction:row;min-width:980px;}
+    body.layout-wide .wrap{overflow-x:visible;}
+  body.layout-wide .main-grid{display:block;}   /* 窄屏自动降为单列，避免任何横向滚动 */
     body.layout-wide .dash-col{width:340px!important;flex:0 0 340px;max-width:340px;position:static;max-height:none;overflow-y:visible;}
     body.layout-wide .list-col{flex:1 1 auto;width:auto;min-width:0;}
   }
 
   /* 双列/窄容器下：运营商、供货方、接口ID 列保底宽度，避免只显示下拉箭头 */
-  #tblStock th:nth-child(3),#tblStock td:nth-child(3){min-width:96px;}
-  #tblStock th:nth-child(4),#tblStock td:nth-child(4){min-width:120px;}
-  #tblStock td:nth-child(3) select,#tblStock td:nth-child(4) select{width:100%;min-width:88px;max-width:none;}
-  #tblStock td:nth-child(2) input{min-width:64px;}
+  #tblStock th:nth-child(3),#tblStock td:nth-child(3){min-width:0;}
+  #tblStock th:nth-child(4),#tblStock td:nth-child(4){min-width:0;}
+  #tblStock td:nth-child(3) select,#tblStock td:nth-child(4) select{width:100%;min-width:0;max-width:none;}
+  #tblStock td:nth-child(2) input{min-width:0;}
 
 
-  /* 双列：表格保底宽度（列内容完整不压缩），改为页面级横向滑动（单滚动条） */
-  body.layout-wide #tblStock{min-width:900px;}
-  body.layout-wide .tbl-scroll{overflow-x:visible;}
+  /* 双列：表格不再设保底宽度、不再走页面级横滑（改由上方固定布局 + 百分比列宽自适应） */
+  .tbl-scroll{overflow-x:auto;}   /* 安全网：固定布局下列宽永不超过容器，此条不会触发 */
 </style>
 
 <script>
@@ -785,15 +813,15 @@ function renderTables(){
     <td>${statusToggle("stock",p.offerId,"skuStatus",p.skuStatus,["上架","下架"])}</td>
     <td>${statusToggle("stock",p.offerId,"status",p.status,["开启","关闭"])}</td>
     <td>${textInput("stock",p.offerId,"interfaceId",p.interfaceId,"接口ID")}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该供货方交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a> `:""}<button class="del-btn" onclick="askDel('stock','${esc(p.offerId)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">无数据</td></tr>';
   document.querySelector("#tblBroad tbody").innerHTML=bb.map(p=>`<tr class="${onShelfBroad(p)?'':'off'}">
-    <td>${esc(p.name)}</td><td title="${esc(p.provider)}">${esc(archShortOf(p.provider))}</td><td>${esc(p.operator)}</td>
-    <td>${esc(p.rate)}</td><td>${textInput("broad",p.productNo,"province",p.province||"","省")}</td><td>${esc(p.city)}</td>
-    <td class="amt">${esc(p.price)}</td>
+    <td title="${esc(p.name)}">${esc(p.name)}</td><td title="${esc(p.provider)}">${esc(archShortOf(p.provider))}</td><td title="${esc(p.operator)}">${esc(p.operator)}</td>
+    <td title="${esc(p.rate)}">${esc(p.rate)}</td><td>${textInput("broad",p.productNo,"province",p.province||"","省")}</td><td title="${esc(p.city)}">${esc(p.city)}</td>
+    <td class="amt" title="${esc(p.price)}">${esc(p.price)}</td>
     <td>${numInput("broad",p.productNo,"commission",p.commission)}</td>
     <td>${statusToggle("broad",p.productNo,"commissionType",p.commissionType||"商机单类",["商机单类","竣工类"])}</td>
     <td>${statusToggle("broad",p.productNo,"shelf",p.shelf,["已上架","已下架","暂不上架"])}</td>
-    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a>`:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
+    <td class="ops">${supKey(p)?`<a class="linkbtn" title="查看该服务商交易数据（数据台聚焦该机构与产品）" href="dashboard.html?sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}" onclick="if(window.parent!==window&&parent.switchTab){parent.switchTab('dash','sup=${encodeURIComponent(supKey(p))}&prod=${encodeURIComponent(p.name)}');return false;}">看数据</a> `:""}<button class="del-btn" onclick="askDel('broad','${esc(p.productNo)}','${esc(p.name)}')">删除</button></td></tr>`).join("")||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">无数据</td></tr>';
 }
 
 // ---- 布局切换（单列 / 双列）----
