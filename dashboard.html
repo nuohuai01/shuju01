@@ -385,9 +385,8 @@
   .legend .lv,.legend .lhb{display:none;}
   .legend .lp{white-space:nowrap;text-align:right;}
 
-  /* 月表数值列宽：避免千分位数字被挤压误读 */
-  #monthlyTable th,#monthlyTable td{min-width:92px;white-space:nowrap;}
-  #monthlyTable td.nm{min-width:78px;}
+  /* 月表数值列：只禁止换行，宽度交给自适应列宽（原写死 min-width:92px 会导致窄屏横向溢出） */
+  #monthlyTable th,#monthlyTable td{white-space:nowrap;}
 
   /* 渠道类型/属性：环形图 + 图例（合并卡片）与联动高亮 */
   .ring-card{display:flex;gap:16px;align-items:center;justify-content:center;padding:2px 0;border:0;background:transparent;width:100%;box-sizing:border-box;}
@@ -678,7 +677,6 @@ if(/share=1/.test(location.search)){(function(){
         <div class="chart-row" style="margin-top:6px;">
           <div class="chart-box" id="txTypeCard" style="flex:1;min-width:240px;"><div id="txTypePie"></div></div>
         </div>
-        <div class="table-wrap no-scroll" id="txTypeTableWrap" style="display:none;"><table class="tx-table" id="txTypeTable"></table></div>
       </div>
     </div>
 
@@ -689,7 +687,6 @@ if(/share=1/.test(location.search)){(function(){
         <div class="chart-row" style="margin-top:6px;">
           <div class="chart-box" id="txAttrCard" style="flex:1;min-width:240px;"><div id="txAttrPie"></div></div>
         </div>
-        <div class="table-wrap no-scroll" id="txAttrTableWrap" style="display:none;"><table class="tx-table" id="txAttrTable"></table></div>
       </div>
     </div>
     </div>
@@ -1031,6 +1028,10 @@ let tasks=load(KT,[]), metrics=load(KM,[]), reports=load(KR,[]);
 // 迁移：移除用户不再需要的旧关键指标标签
 const OLD_METRIC_NAMES=["销售额","新客数","转化率","发展订单","整体退订率"];
 { const _b=metrics.length; metrics=metrics.filter(m=>!OLD_METRIC_NAMES.includes(m.name)); if(metrics.length!==_b)save(KM,metrics); }
+// 迁移（2026-09-20 口径统一）：清除历史遗留的 source=tx 每日指标日志。
+// 这批日志是「导入当天」写入的定值快照，月度表已改为直读 supplierDay 明细，日志不再被任何视图读取；
+// 保留只会白占 localStorage（实测 324 条）并随自动同步产生无谓流量。此处放在初始化阶段，确保打开即清理。
+{ const _b=metrics.length; metrics=metrics.filter(m=>m.source!=="tx"); if(metrics.length!==_b)save(KM,metrics); }
 
 // 机构简称映射
 const PALETTE=["#4f46e5","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#84cc16","#f97316","#14b8a6"];
@@ -1330,44 +1331,27 @@ function renderMonthly(){
   const box=document.getElementById("monthlyTable");
   if(!box)return;
   const _tx=getTx();
-  // 聚焦机构时：直接从交易明细(supplierDay)按机构实时聚合月度（避开无机构维度的全量指标）
-  if(supFocus&&_tx&&_tx.supplierDay){
-    const MF={};
-    for(const sp in _tx.supplierDay)for(const d in _tx.supplierDay[sp]){
-      if(!supHit(sp))continue;
-      if(!inScope(d))continue;
-      const c=_tx.supplierDay[sp][d],ym=d.slice(0,7);
-      MF[ym]=MF[ym]||{dev:0,monthDev:0,unsub:0};
-      MF[ym].dev+=c.dev;MF[ym].monthDev+=c.monthDev||0;MF[ym].unsub+=c.unsub;
-    }
-    const yms=Object.keys(MF).sort();
-    if(yms.length===0){box.innerHTML='<div class="empty">该机构在此时间范围暂无月度数据</div>';return;}
-    const rateOf=o=>o.monthDev>0?o.unsub/o.monthDev*100:0;
-    const hb=(v,prev,invert)=>{
-      if(prev===undefined||prev===0||isNaN(prev))return '<td>—</td>';
-      const d=v-prev,p=d/prev*100,up=d>=0,good=invert?!up:up;
-      return `<td class="${good?'mup':'mdown'}">${up?'▲':'▼'} ${Math.abs(p).toFixed(1)}%</td>`;
-    };
-    let rows="";
-    yms.forEach((ym,i)=>{
-      const o=MF[ym],rate=rateOf(o),prev=yms[i-1]!==undefined?MF[yms[i-1]]:undefined;
-      const prevRate=prev!==undefined?rateOf(prev):undefined;
-      rows+=`<tr><td class="nm">${ym}</td><td>${fmt(o.dev)}</td>${hb(o.dev,prev&&prev.dev,true)}<td>${fmt(o.unsub)}</td><td class="rate">${rate.toFixed(2)}%</td>${hb(rate,prevRate,true)}</tr>`;
-    });
-    box.innerHTML=`<thead><tr><th>月份</th><th>发展订单量<span class="u">（笔）</span></th><th>订单量月环比<span class="u">（%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>${rows}</tbody>`;
+  // 【口径统一】月度汇总与 KPI 卡 / 机构表 / 环形图同源：一律读交易明细 supplierDay，
+  // 不再读 wb_workdash_metrics 里 source=tx 的日志快照。
+  // 原因：日志是「导入当天」写入的定值快照，若某段日期后续未被重新导入（如月初整理版只含增量），
+  // 旧值会永久滞留在日志中，导致月度表与 KPI 出现同日不同率（曾观测到 9 月 9.59% vs 18.64%）。
+  // 明细层 merge2D 按天覆盖，重新导入即自动追平，是唯一权威源。
+  if(!_tx||!_tx.supplierDay||Object.keys(_tx.supplierDay).length===0){
+    box.innerHTML='<div class="empty">上传交易数据后，这里按月份汇总发展订单量与退订率，并计算月环比。</div>';
     return;
   }
-  const tx=metrics.filter(m=>m.source==="tx");
-  if(tx.length===0){box.innerHTML='<div class="empty">上传交易数据后，这里按月份汇总发展订单量与退订率，并计算月环比。</div>';return;}
   const M={};
-  tx.forEach(m=>{
-    const ym=m.date.slice(0,7);
-    M[ym]=M[ym]||{dev:0,monthDev:0,unsub:0};
-    if(m.name==="每日发展订单量")M[ym].dev+=m.val;
-    else if(m.name==="月包订单量")M[ym].monthDev+=m.val;
-    else if(m.name==="退订数")M[ym].unsub+=m.val;
-  });
+  for(const sp in _tx.supplierDay){
+    if(supFocus&&!supHit(sp))continue;
+    for(const d in _tx.supplierDay[sp]){
+      if(!inScope(d))continue;
+      const c=_tx.supplierDay[sp][d],ym=d.slice(0,7);
+      M[ym]=M[ym]||{dev:0,monthDev:0,unsub:0};
+      M[ym].dev+=c.dev||0;M[ym].monthDev+=c.monthDev||0;M[ym].unsub+=c.unsub||0;
+    }
+  }
   const yms=Object.keys(M).sort();
+  if(yms.length===0){box.innerHTML='<div class="empty">'+(supFocus?'该机构在此时间范围暂无月度数据':'该时间范围暂无月度数据')+'</div>';return;}
   const rateOf=o=>o.monthDev>0?o.unsub/o.monthDev*100:0;
   const hb=(v,prev,invert)=>{
     if(prev===undefined||prev===0||isNaN(prev))return '<td>—</td>';
@@ -1678,24 +1662,18 @@ function mergeTx(old, incoming){
   out.kpis={dev:kpis.dev,monthDev:kpis.monthDev,unsub:kpis.unsub,rate:kpis.monthDev?kpis.unsub/kpis.monthDev*100:0};
   return out;
 }
+// 【口径统一 · 2026-09-20】交易数据不再写入 wb_workdash_metrics。
+// 原实现的作用是把每日指标「快照」成日志供月度表读取，但快照是导入当天定值：
+// 若某段日期此后未被重新导入（例如月初整理版只含增量、不含月中日期），旧值会永久滞留，
+// 造成月度表与 KPI 卡同日不同率（曾观测 9 月 9.59% vs 18.64%，差 9.05pp）。
+// 现改为：月度表等全部读 tx.supplierDay 明细（merge2D 按天覆盖，重导即自动追平），
+// 本函数仅保留「清理存量 tx 日志」职责，避免历史残留继续占用 localStorage / 同步流量。
 function syncTxToMetrics(tx){
-  if(!tx||!tx.supplierDay)return;
-  const dayTotals={};
-  for(const sp in tx.supplierDay)for(const d in tx.supplierDay[sp]){
-    const c=tx.supplierDay[sp][d];dayTotals[d]=dayTotals[d]||{dev:0,unsub:0,monthDev:0};dayTotals[d].dev+=c.dev;dayTotals[d].monthDev+=c.monthDev||0;dayTotals[d].unsub+=c.unsub;
+  // 无论是否传入 tx，都先清一遍存量 tx 日志
+  if(metrics.some(m=>m.source==="tx")){
+    metrics=metrics.filter(m=>m.source!=="tx");
+    save(KM,metrics);
   }
-  const dates=Object.keys(dayTotals).sort();
-  const dup={};
-  dates.forEach(d=>{dup["每日发展订单量|"+d]=1;dup["月包订单量|"+d]=1;dup["退订数|"+d]=1;dup["退订率|"+d]=1;});
-  metrics=metrics.filter(m=>!(m.source==="tx"&&dup[m.name+"|"+m.date]));
-  dates.forEach(d=>{
-    const c=dayTotals[d];const rate=c.monthDev>0?c.unsub/(c.monthDev||1)*100:0;
-    metrics.push({id:uid(),name:"每日发展订单量",date:d,val:c.dev,cat:"交易数据",source:"tx"});
-    metrics.push({id:uid(),name:"月包订单量",date:d,val:c.monthDev||0,cat:"交易数据",source:"tx"});
-    metrics.push({id:uid(),name:"退订数",date:d,val:c.unsub,cat:"交易数据",source:"tx"});
-    metrics.push({id:uid(),name:"退订率",date:d,val:Number(rate.toFixed(2)),cat:"交易数据",source:"tx"});
-  });
-  save(KM,metrics);
 }
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
@@ -1909,9 +1887,7 @@ function refreshProductSortArrows(){
     if(!k)return;
     s.textContent=prodSortKey===k?(prodSortDir==="asc"?" ▲":" ▼"):"";
   });
-  // 同步更新本地数据台区（如"最近日期"列表）的排序显示
-  var spansD=document.querySelectorAll("#txSupTable .sort-arrow, #txProv .sort-arrow, #txCh .sort-arrow, #txTypeTable .sort-arrow, #txAttrTable .sort-arrow");
-  // 暂只维护产品分析
+  // 暂只维护产品分析的排序箭头显示（其余台区用自绘箭头，无 .sort-arrow 节点）
 }
 
 function renderTx(){
@@ -2347,7 +2323,7 @@ function renderOneDim(prefix,dayMap,label,granOverride){
   const rows=Object.keys(agg2).map(k=>{const a=agg2[k];const rate=a.monthDev>0?a.unsub/a.monthDev*100:0;return {k,dev:a.dev,monthDev:a.monthDev||0,unsub:a.unsub,hb:a.hb,rate,rateH:a.rateH};}).sort((a,b)=>b.dev-a.dev);
   const wrap=boxT&&boxT.parentElement;
   if(wrap)wrap.querySelectorAll("."+prefix+"-warn").forEach(e=>e.remove());
-  if(rows.length===0){boxT.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxPie)boxPie.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxBar)boxBar.innerHTML='';return;}
+  if(rows.length===0){if(boxT)boxT.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxPie)boxPie.innerHTML='<div class="empty">该时间范围无数据</div>';if(boxBar)boxBar.innerHTML='';return;}
   const totalDev=rows.reduce((s,r)=>s+r.dev,0);
   const totalUnsub=rows.reduce((s,r)=>s+r.unsub,0);
   rows.forEach(r=>{r.pct=totalDev>0?r.dev/totalDev*100:0;r.upct=totalUnsub>0?r.unsub/totalUnsub*100:0;});
@@ -2363,7 +2339,9 @@ function renderOneDim(prefix,dayMap,label,granOverride){
     const warn=document.createElement("div");
     warn.className="tx-warn "+prefix+"-warn";
     warn.innerHTML=`警告：当前映射把所有订单都归到了「${esc(rows[0].k)}」，请检查「数据补充」里的映射表是否把「渠道类型 / 渠道属性」填成了同一值。`;
-    wrap.insertBefore(warn,boxT);
+    // 锚点优先用表格容器；残留容器已删除时退回环图容器，都没有则追加到 wrap 末尾
+    const anchor=boxT||boxPie||null;
+    try{ wrap.insertBefore(warn,anchor); }catch(e){ wrap.appendChild(warn); }
   }
 }
 // 环形图 + 图例（图例即数据条）：外环=订单占比（彩色），内环=退订占比（灰阶，对应扇区置灰）
