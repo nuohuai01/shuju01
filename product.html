@@ -248,13 +248,18 @@
 
   /* 双列：表格不再设保底宽度、不再走页面级横滑（改由上方固定布局 + 百分比列宽自适应） */
   .tbl-scroll{overflow-x:auto;}   /* 安全网：固定布局下列宽永不超过容器，此条不会触发 */
-  /* ---- 区块折叠 + 存量表筛选栏（2026-09-23）---- */
+  /* ---- 区块折叠（点标题）+ 存量表筛选栏（2026-09-23）---- */
   .module > h2{flex-wrap:wrap;}
+  .module > h2.mod-title{cursor:pointer;user-select:none;padding:5px 0;}
+  .module > h2.mod-title:hover .t-txt,
+  .module > h2.mod-title:hover .mod-chev{color:var(--primary);}
+  .mod-chev{font-size:12px;line-height:1;color:var(--muted);flex-shrink:0;margin-left:-2px;}
+  .module > h2 .btn-add{margin-left:auto;font-size:12.5px;padding:7px 13px;flex-shrink:0;}
   .module.collapsed > .edit-tip,
   .module.collapsed > .fbar,
   .module.collapsed > .add-bar,
   .module.collapsed > .tbl-scroll{display:none;}
-  .col-btn{margin-left:auto;font-size:12px;line-height:1;padding:8px 13px;border:1px solid var(--line);
+  .col-btn{font-size:12px;line-height:1;padding:8px 13px;border:1px solid var(--line);
     border-radius:999px;background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;}
   .col-btn:hover{color:var(--primary);border-color:var(--primary);}
   .fbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 12px;}
@@ -266,6 +271,7 @@
   @media(max-width:768px){
     .fbar input[type=search]{max-width:none;flex:1 1 100%;}
     .fbar select{flex:1 1 calc(50% - 4px);max-width:none;}
+    .module > h2.mod-title{min-height:44px;}
     .col-btn{min-height:44px;}
   }
 </style>
@@ -343,11 +349,12 @@ if(/share=1/.test(location.search)){(function(){
 
   <!-- 存量上架产品 -->
   <section class="module" id="secStock">
-    <h2>
+    <h2 class="mod-title" onclick="toggleCollapse('stock')" title="点击折叠 / 展开该区块">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      存量上架产品（<span id="cntStock">0</span>）
+      <span class="t-txt">存量上架产品（<span id="cntStock">0</span>）</span>
+      <span class="mod-chev" id="chevStock">▾</span>
       <span class="fbar-cnt" id="fqCnt"></span>
-      <button class="col-btn" id="btnColStock" onclick="toggleCollapse('stock')" title="收起该区块">收起</button>
+      <button class="btn-add" onclick="event.stopPropagation();openAdd('stock')">＋ 添加存量产品</button>
     </h2>
     <p class="edit-tip">🖱️ <b>SKU状态 / 权益包状态</b> 列可直接点击左右切换；下架/关闭的商品会从「在售」统计中剔除（灰色行）。</p>
     <div class="fbar" id="fbarStock">
@@ -362,19 +369,18 @@ if(/share=1/.test(location.search)){(function(){
       </select>
       <button class="col-btn" style="margin-left:0;" onclick="clearFbar()">清除筛选</button>
     </div>
-    <div class="add-bar"><button class="btn-add" onclick="openAdd('stock')">＋ 添加存量产品</button></div>
     <div class="tbl-scroll"><table class="tbl" id="tblStock"><thead><tr><th class="sort-th" data-key="name" onclick="onSort('name')">权益包名称<span class="sort-arrow"></span></th><th class="sort-th" data-key="amount" onclick="onSort('amount')">金额<span class="sort-arrow"></span></th><th class="sort-th" data-key="operator" onclick="onSort('operator')">运营商<span class="sort-arrow"></span></th><th class="sort-th" data-key="supplier" onclick="onSort('supplier')">供货方<span class="sort-arrow"></span></th><th class="sort-th" data-key="skuStatus" onclick="onSort('skuStatus')">SKU状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="status" onclick="onSort('status')">权益包状态<span class="sort-arrow"></span></th><th class="sort-th" data-key="interfaceId" onclick="onSort('interfaceId')">接口ID<span class="sort-arrow"></span></th><th>操作</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <!-- 宽带上架产品 -->
   <section class="module" id="secBroad">
-    <h2>
+    <h2 class="mod-title" onclick="toggleCollapse('broad')" title="点击折叠 / 展开该区块">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="1"/><path d="M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3"/></svg>
-      宽带上架产品（<span id="cntBroad">0</span>）
-      <button class="col-btn" id="btnColBroad" onclick="toggleCollapse('broad')" title="收起该区块">收起</button>
+      <span class="t-txt">宽带上架产品（<span id="cntBroad">0</span>）</span>
+      <span class="mod-chev" id="chevBroad">▾</span>
+      <button class="btn-add" onclick="event.stopPropagation();openAdd('broad')">＋ 添加宽带产品</button>
     </h2>
       <p class="edit-tip">🖱️ <b>上架状态</b> 列点击左右切换（登记为上架即代表审核通过）；<b>佣金金额</b> 可直接点入修改、<b>佣金类型</b> 点击左右切换（商机单类 / 竣工类）；下架商品会从「在售」统计中剔除（灰色行）。</p>
-    <div class="add-bar"><button class="btn-add" onclick="openAdd('broad')">＋ 添加宽带产品</button></div>
     <div class="tbl-scroll"><table class="tbl" id="tblBroad"><thead><tr><th>商品名称</th><th>服务商</th><th>运营商</th><th>速率</th><th>省</th><th>市</th><th>套餐金额</th><th>佣金金额</th><th>佣金类型</th><th>商品状态</th><th>操作</th></tr></thead><tbody></tbody></table></div>
   </section>
     </div>
@@ -656,12 +662,14 @@ function toggleCollapse(kind){
   applyCollapse();
 }
 function applyCollapse(){
-  [["stock","secStock","btnColStock"],["broad","secBroad","btnColBroad"]].forEach(function(x){
+  [["stock","secStock","chevStock"],["broad","secBroad","chevBroad"]].forEach(function(x){
     const sec=document.getElementById(x[1]);if(!sec)return;
     const on=!!collapseState[x[0]];
     sec.classList.toggle("collapsed",on);
-    const btn=document.getElementById(x[2]);
-    if(btn){btn.textContent=on?"展开":"收起";btn.setAttribute("title",on?"展开该区块":"收起该区块");}
+    const hd=sec.querySelector("h2");
+    if(hd)hd.setAttribute("title",on?"点击展开该区块":"点击折叠该区块");
+    const ch=document.getElementById(x[2]);
+    if(ch)ch.textContent=on?"▸":"▾";
   });
 }
 const OPS=["电信","移动","联通"];
