@@ -589,7 +589,7 @@ function stripTail(s){return String(s||"").replace(/（[^）]*）?\s*$/g,"").tri
 function matchSup(p,sup){
   if(!sup)return true;
   const s=String(p.supplier||p.provider||"").trim();
-  if(!s)return true;
+  if(!s)return !sup; // 未填供货方的产品：仅在未筛选供货方时显示；筛选具体供货方时不混入（与运营商筛选口径一致）
   if(s===sup||s.indexOf(sup)>=0||sup.indexOf(s)>=0)return true;
   // 去括号后双向包含（兼容"中国联合网络通信有限公司浙江省分公司（全客）" vs 档案"中国联合网络通信有限公司浙江省分公司"）
   const s2=stripTail(s),sup2=stripTail(sup);
@@ -601,7 +601,7 @@ function matchSup(p,sup){
   archs=archs.concat(list||[]);
   for(const a of archs){
     const aShort=a.short||"",aName=a.name||"",aProv=a.province||"",aOp=a.operator||"";
-    const aCombo=aProv?aProv.replace(/[省市区]$/,"")+aOp:"";
+    const aCombo=(aProv&&aOp)?(aProv.replace(/[省市区]$/,"")+aOp):""; // 省+运须同时存在，退化为裸省份（如"湖南"）会让湖南电信/湖南移动全部误匹配
     const aName2=stripTail(aName),aShort2=stripTail(aShort);
     const supHit=sup===aShort||sup===aName||(aShort&&(sup.indexOf(aShort)>=0||aShort.indexOf(sup)>=0))||(aName&&(sup.indexOf(aName)>=0||sup2.indexOf(aName2)>=0||sup.indexOf(aName2)>=0))||(aCombo&&sup.indexOf(aCombo)>=0);
     if(!supHit)continue;
