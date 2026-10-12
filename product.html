@@ -646,8 +646,15 @@ function renderFbar(){
   const supBox=document.getElementById("fqSup");
   if(supBox){
     const sups=[...new Set(mergedStock().map(supKey).filter(Boolean))].sort();
-    let h='<option value="">供货方：全部</option>'+sups.map(s=>'<option value="'+esc(s)+'"'+(filterSup===s?" selected":"")+'>'+esc(archShortOf(s)||s)+'</option>').join("");
-    if(filterSup&&sups.indexOf(filterSup)<0)h+='<option value="'+esc(filterSup)+'" selected>'+esc(filterSup)+'</option>';
+    // 按显示名（档案简称）合并选项：不同原始写法（如"湖南联通/湖南联通聚杰/湖南联通讯旗/湖南联通(讯旗)"）
+    // 显示同名时只保留一个选项；筛选走 matchSup 模糊包含，合并后仍命中全部写法的产品
+    const seen=new Map();
+    sups.forEach(s=>{const lb=archShortOf(s)||s;if(!seen.has(lb))seen.set(lb,s);});
+    // 兼容旧的原名筛选值（URL ?sup= 或历史状态）：映射到其所属显示名
+    let activeLb="";
+    if(filterSup){if(seen.has(filterSup))activeLb=filterSup;else{const hit=sups.find(s=>(archShortOf(s)||s)===(archShortOf(filterSup)||filterSup));activeLb=hit?(archShortOf(hit)||hit):"";}}
+    let h='<option value="">供货方：全部</option>'+[...seen.keys()].map(lb=>'<option value="'+esc(lb)+'"'+(filterSup&&activeLb===lb?" selected":"")+'>'+esc(lb)+'</option>').join("");
+    if(filterSup&&!activeLb)h+='<option value="'+esc(filterSup)+'" selected>'+esc(filterSup)+'</option>';
     supBox.innerHTML=h;
   }
   const kw=document.getElementById("fqKw");
