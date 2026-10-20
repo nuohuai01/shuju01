@@ -1466,11 +1466,34 @@ function inflatedReader(local){
   const ds=new DecompressionStream("deflate-raw");const w=ds.writable.getWriter();w.write(local.data);w.close();
   return ds.readable.getReader();
 }
-async function findSheet(zip){
+async function findSheets(zip){
+  // 返回工作簿声明顺序的全部 sheet：{name, file}。多 sheet 文件（如附带统计页的导出）靠它逐个尝试
+  const out=[];
   const wb=await inflateData(getLocal(zip,"xl/workbook.xml"));
-  let sheetFile="xl/worksheets/sheet1.xml";
-  if(wb){const wbx=new TextDecoder().decode(wb);const sm=wbx.match(/<sheet\b[^>]*\bname="([^"]*)"[^>]*\br:id="([^"]*)"/)||wbx.match(/<sheet\b[^>]*\br:id="([^"]*)"[^>]*\bname="([^"]*)"/);if(sm){const rid=sm[2]||sm[1];const rels=await inflateData(getLocal(zip,"xl/_rels/workbook.xml.rels"));if(rels){const rx=new TextDecoder().decode(rels);const rm=new RegExp('<Relationship\\b[^>]*\\bId="'+rid+'"[^>]*\\bTarget="([^"]*)"').exec(rx);if(rm){let t=rm[1].replace(/^(\.\.\/)+/,"");sheetFile="xl/"+t.replace(/^\//,"");}}}}
-  return sheetFile;
+  if(wb){
+    const wbx=new TextDecoder().decode(wb);
+    const relsBuf=await inflateData(getLocal(zip,"xl/_rels/workbook.xml.rels"));
+    const rx=relsBuf?new TextDecoder().decode(relsBuf):"";
+    const relMap={};
+    rx.replace(/<Relationship\b[^>]*>/g,m=>{const id=(m.match(/\bId="([^"]*)"/)||[])[1];const tg=(m.match(/\bTarget="([^"]*)"/)||[])[1];if(id&&tg)relMap[id]=tg;return m;});
+    const re=/<sheet\b[^>]*>/g;let m;
+    while((m=re.exec(wbx))){
+      const tag=m[0];
+      const name=(tag.match(/\bname="([^"]*)"/)||[])[1]||"";
+      const rid=(tag.match(/\br:id="([^"]*)"/)||[])[1];
+      let t=rid&&relMap[rid];if(!t)continue;
+      // Target 三种形态都可能出现：worksheets/sheet1.xml（WPS/Excel）、/xl/worksheets/...（绝对）、../xl/...（相对）
+      t=t.replace(/^(\.\.\/)+/,"").replace(/^\/+/,"");
+      if(!/^xl\//.test(t))t="xl/"+t;
+      out.push({name:name,file:t});
+    }
+  }
+  if(!out.length)out.push({name:"",file:"xl/worksheets/sheet1.xml"});
+  return out;
+}
+async function findSheet(zip){
+  const ls=await findSheets(zip);
+  return ls[0].file;
 }
 function decodeEntities(s){
   if(s==null)return "";
@@ -1556,19 +1579,27 @@ function accRow(ctx,cm,hm){
   }
 }
 async function xlsxHeader(buf){
-  const zip=await readZipEntries(buf);const sheetFile=await findSheet(zip);
+  const zip=await readZipEntries(buf);
+  const cands=await findSheets(zip);
+  // 表名含业务关键词的 sheet 优先（多 sheet 文件常把统计页/说明页排在前，且那些页往往没有第 1 行）
+  cands.sort((a,b)=>(/话费宝|交易|明细|订单/.test(b.name)?1:0)-(/话费宝|交易|明细|订单/.test(a.name)?1:0));
   let sst=[];const ssLocal=getLocal(zip,"xl/sharedStrings.xml");
   if(ssLocal){try{const ssx=new TextDecoder().decode(await inflateData(ssLocal));const doc=new DOMParser().parseFromString(ssx,"application/xml");doc.querySelectorAll("si").forEach(si=>{let t="";si.querySelectorAll("t").forEach(tt=>{let p=tt.parentNode;while(p&&p!==si){if(p.nodeName==="rPh"||p.nodeName==="phoneticPr")return;p=p.parentNode;}t+=tt.textContent;});sst.push(t);});}catch(e){sst=[];}}
-  const local=getLocal(zip,sheetFile);if(!local)throw new Error("找不到工作表");
-  const reader=inflatedReader(local);let carry=new Uint8Array(0);const ROWO=[...'<row'].map(c=>c.charCodeAt(0)),ROWC=[...'</row>'].map(c=>c.charCodeAt(0));
-  while(true){const {done,value}=await reader.read();if(done)break;const merged=new Uint8Array(carry.length+value.length);merged.set(carry,0);merged.set(value,carry.length);let pos=0;
-    while(true){const o=findBytes(merged,ROWO,pos);if(o<0)break;const c=findBytes(merged,ROWC,o);if(c<0)break;const xml=new TextDecoder().decode(merged.subarray(o,c+6));const rn=+(xml.match(/\br="(\d+)"/)||[])[1]||0;if(rn===1){const cm=parseCellsStr(xml,sst);const mc=Object.keys(cm).length?Math.max(...Object.keys(cm).map(Number)):0;const arr=[];for(let i=0;i<=mc;i++)arr[i]=cm[i]||"";return arr;}pos=c+6;}
-    carry=merged.subarray(pos);
+  const ROWO=[...'<row'].map(c=>c.charCodeAt(0)),ROWC=[...'</row>'].map(c=>c.charCodeAt(0));
+  for(const cand of cands){
+    const local=getLocal(zip,cand.file);if(!local)continue;
+    const reader=inflatedReader(local);let carry=new Uint8Array(0);let found=null;
+    scan: while(true){const {done,value}=await reader.read();if(done)break;const merged=new Uint8Array(carry.length+value.length);merged.set(carry,0);merged.set(value,carry.length);let pos=0;
+      while(true){const o=findBytes(merged,ROWO,pos);if(o<0)break;const c=findBytes(merged,ROWC,o);if(c<0)break;const xml=new TextDecoder().decode(merged.subarray(o,c+6));const rn=+(xml.match(/\br="(\d+)"/)||[])[1]||0;if(rn===1){const cm=parseCellsStr(xml,sst);const mc=Object.keys(cm).length?Math.max(...Object.keys(cm).map(Number)):0;const arr=[];for(let i=0;i<=mc;i++)arr[i]=cm[i]||"";if(arr.some(x=>String(x).trim()!=="")){found=arr;break scan;}}pos=c+6;}
+      carry=merged.subarray(pos);
+    }
+    if(found){window.__txSheetFile=cand.file;return found;}
+    // 该 sheet 无第 1 行或第 1 行全空（如附带的统计页）→ 尝试下一个 sheet
   }
   throw new Error("未找到表头");
 }
 async function xlsxAggregate(buf,hm){
-  const zip=await readZipEntries(buf);const sheetFile=await findSheet(zip);
+  const zip=await readZipEntries(buf);const sheetFile=window.__txSheetFile||await findSheet(zip);
   const ssLocal=getLocal(zip,"xl/sharedStrings.xml");let sst=[];if(ssLocal){try{const ssx=new TextDecoder().decode(await inflateData(ssLocal));const doc=new DOMParser().parseFromString(ssx,"application/xml");doc.querySelectorAll("si").forEach(si=>{let t="";si.querySelectorAll("t").forEach(tt=>{let p=tt.parentNode;while(p&&p!==si){if(p.nodeName==="rPh"||p.nodeName==="phoneticPr")return;p=p.parentNode;}t+=tt.textContent;});sst.push(t);});}catch(e){sst=[];}}
   const local=getLocal(zip,sheetFile);if(!local)throw new Error("找不到工作表");
   const reader=inflatedReader(local);let carry=new Uint8Array(0);const ctx=makeCtx();let headerDone=false;const ROWO=[...'<row'].map(c=>c.charCodeAt(0)),ROWC=[...'</row>'].map(c=>c.charCodeAt(0));
@@ -1702,7 +1733,7 @@ async function handleTxFile(file){
     if(!ok)return;
   }
   document.getElementById("txMeta").textContent="正在读取文件表头…";
-  window.__txFile=file.name;
+  window.__txFile=file.name;window.__txSheetFile=null;
   try{
     let headers;
     if(file.name.toLowerCase().endsWith(".csv")){
