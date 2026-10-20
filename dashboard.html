@@ -1648,6 +1648,9 @@ function mergeTx(old, incoming){
   const add2D=(a,b)=>{ if(!b) return; for(const k in b){ a[k]=a[k]||{}; for(const p in b[k]){ const inc=b[k][p]||{dev:0,unsub:0}; const cur=a[k][p]||{dev:0,unsub:0}; cur.dev+=inc.dev; cur.monthDev=(cur.monthDev||0)+(inc.monthDev||0); cur.unsub+=inc.unsub; a[k][p]=cur; } } };
   const addMap=(a,b)=>{ if(!b) return; for(const k in b) a[k]=(a[k]||0)+b[k]; };
   const add2DN=(a,b)=>{ if(!b) return; for(const d in b){ a[d]=a[d]||{}; for(const k in b[d]) a[d][k]=(a[d][k]||0)+b[d][k]; } };
+  // 2026-10-20 加固：日粒度维度（省份/渠道/类型/属性）改按天覆盖——重导同一天以新文件为准，不再重复累加
+  const cov2D=(a,b)=>{ if(!b) return; for(const k in b){ a[k]=a[k]||{}; for(const d in b[k]) a[k][d]=b[k][d]; } };
+  const cov2DN=(a,b)=>{ if(!b) return; for(const d in b){ a[d]=a[d]||{}; for(const k in b[d]) a[d][k]=b[d][k]||0; } };
   const merge3D=(a,b)=>{ if(!b) return; for(const pn in b){ a[pn]=a[pn]||{}; for(const sp in b[pn]){ a[pn][sp]=a[pn][sp]||{}; for(const m in b[pn][sp]){ const inc=b[pn][sp][m]||{dev:0,unsub:0}; const cur=a[pn][sp][m]||{dev:0,unsub:0}; cur.dev=inc.dev; cur.monthDev=inc.monthDev||0; cur.unsub=inc.unsub; a[pn][sp][m]=cur; } } } };
   // 原地合并（不深拷贝旧数据）：old 来自 localStorage 可安全 mutate，避免大对象全量复制导致慢
   const out=old;
@@ -1657,8 +1660,8 @@ function mergeTx(old, incoming){
   merge2D(out.supplierDay, incoming.supplierDay);
   add2D(out.productMonth, incoming.productMonth);
   merge3D(out.prodSupMonth, incoming.prodSupMonth);
-  add2D(out.typeDay, incoming.typeDay);
-  add2D(out.attrDay, incoming.attrDay);
+  cov2D(out.typeDay, incoming.typeDay);
+  cov2D(out.attrDay, incoming.attrDay);
   add2D(out.typeSupMonth, incoming.typeSupMonth);
   add2D(out.attrSupMonth, incoming.attrSupMonth);
   add2D(out.prodTypeMonth, incoming.prodTypeMonth);
@@ -1671,14 +1674,13 @@ function mergeTx(old, incoming){
     if(out.partyRows.length>20000)out.partyRows=out.partyRows.slice(0,20000);
     out.meta.partyRowsTrimmed=true;
   }
-  out.prov=normCounts(out.prov); out.ch=normCounts(out.ch);
-  incoming.prov=normCounts(incoming.prov); incoming.ch=normCounts(incoming.ch);
-  addMap(out.prov, incoming.prov);
-  addMap(out.ch, incoming.ch);
-  out.provDay=out.provDay||{}; incoming.provDay=incoming.provDay||{}; add2D(out.provDay, incoming.provDay);
-  out.chDay=out.chDay||{}; incoming.chDay=incoming.chDay||{}; add2D(out.chDay, incoming.chDay);
-  out.provOpDay=out.provOpDay||{}; incoming.provOpDay=incoming.provOpDay||{}; add2DN(out.provOpDay, incoming.provOpDay);
-  out.chOpDay=out.chOpDay||{}; incoming.chOpDay=incoming.chOpDay||{}; add2DN(out.chOpDay, incoming.chOpDay);
+  out.provDay=out.provDay||{}; incoming.provDay=incoming.provDay||{}; cov2D(out.provDay, incoming.provDay);
+  out.chDay=out.chDay||{}; incoming.chDay=incoming.chDay||{}; cov2D(out.chDay, incoming.chDay);
+  out.provOpDay=out.provOpDay||{}; incoming.provOpDay=incoming.provOpDay||{}; cov2DN(out.provOpDay, incoming.provOpDay);
+  out.chOpDay=out.chOpDay||{}; incoming.chOpDay=incoming.chOpDay||{}; cov2DN(out.chOpDay, incoming.chOpDay);
+  // prov/ch 总量从日粒度重算（原累加语义在重导同批数据时会重复计数）
+  out.prov={}; for(const dt in out.provDay)for(const k in out.provDay[dt])out.prov[k]=(out.prov[k]||0)+(out.provDay[dt][k]||0);
+  out.ch={}; for(const dt in out.chDay)for(const k in out.chDay[dt])out.ch[k]=(out.ch[k]||0)+(out.chDay[dt][k]||0);
   out.meta.rows=(out.meta.rows||0)+(incoming.meta.rows||0);
   out.meta.statusCounts=out.meta.statusCounts||{};
   for(const k in incoming.meta.statusCounts) out.meta.statusCounts[k]=(out.meta.statusCounts[k]||0)+incoming.meta.statusCounts[k];
