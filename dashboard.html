@@ -531,9 +531,6 @@ if(/share=1/.test(location.search)){(function(){
       <button class="btn" id="btnImport">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>全站恢复
       </button>
-      <button class="btn ghost" id="btnClear">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>清空示例
-      </button>
       <span class="layout-ctl" id="layoutCtl" title="切换布局">
         <button class="btn sm" id="btnNarrow" onclick="setLayout('narrow')">单列</button>
         <button class="btn sm" id="btnWide" onclick="setLayout('wide')">双列</button>
@@ -1087,6 +1084,10 @@ async function doShareSync(reason){
   if(!tk){try{showToast("尚未配置同步令牌：点「同步设置」粘贴 GitHub 令牌（仅存本机）","err",6000);}catch(e){}return false;}
   if(__syncing){try{showToast("正在同步中，稍候…","");}catch(e){}return false;}
   __syncing=true;
+  var __btnS=document.getElementById("btnShare");
+  var __btnRestore=function(){try{__btnS.disabled=false;__btnS.innerHTML=__btnS.dataset.orig||__btnS.innerHTML;}catch(e){}};
+  try{__btnS.disabled=true;__btnS.dataset.orig=__btnS.innerHTML;__btnS.textContent="同步中…（加密+上传）";}catch(e){}
+  try{showToast("开始同步：加密快照后上传，约需数秒（视网络而定）","");}catch(e){}
   try{
     var lsAll={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("wb_")===0)lsAll[k]=localStorage.getItem(k);}
     var d={_export:"workdash_full",_v:3,time:new Date().toISOString(),ls:lsAll};
@@ -1097,20 +1098,20 @@ async function doShareSync(reason){
     var hasBiz=!!(lsAll["wb_project_archive"]||lsAll["wb_workdash_tx"]||lsAll["wb_miss_priority_v1"]);
     if(!payload||payload.length<5000||keyCount<6||!hasBiz){
       try{showToast("同步已中止：本机数据不完整（缺少档案/交易/缺品数据），未覆盖云端快照。请在本机导入数据后再同步","err",7000);}catch(e){}
-      __syncing=false;return false;
+      __btnRestore();__syncing=false;return false;
     }
     // A2 加密：快照 AES-256-GCM 加密后上传，云端只存密文。未设口令则中止（防止数据明文公开）
     var pwd=getPwd();
-    if(!pwd){try{showToast("尚未设置快照口令：点「同步设置」设置口令后再同步（防止业务数据明文公开）","err",7000);}catch(e){}__syncing=false;return false;}
+    if(!pwd){try{showToast("尚未设置快照口令：点「同步设置」设置口令后再同步（防止业务数据明文公开）","err",7000);}catch(e){}__btnRestore();__syncing=false;return false;}
     try{
       var encSnap=await snapEncrypt(d,pwd);
       payload=JSON.stringify(encSnap);
     }catch(eEnc){
       try{showToast("快照加密失败："+(eEnc&&eEnc.message||eEnc)+"，未覆盖云端","err",7000);}catch(e2){}
-      __syncing=false;return false;
+      __btnRestore();__syncing=false;return false;
     }
     var b64="";try{b64=btoa(unescape(encodeURIComponent(payload)));}catch(e){b64="";}
-    if(!b64||b64.length<800){try{showToast("同步已中止：数据编码异常（未覆盖云端快照）","err",6000);}catch(e){}__syncing=false;return false;}
+    if(!b64||b64.length<800){try{showToast("同步已中止：数据编码异常（未覆盖云端快照）","err",6000);}catch(e){}__btnRestore();__syncing=false;return false;}
     var u="https://api.github.com/repos/"+GIT_SYNC.owner+"/"+GIT_SYNC.repo+"/contents/"+GIT_SYNC.path;
     var ok=false,msg="";
     for(var attempt=0;attempt<2&&!ok;attempt++){
@@ -1136,12 +1137,12 @@ async function doShareSync(reason){
       if(put.status===409){continue;} // sha 冲突：重取 sha 再试一次
       break;
     }
-    if(ok){try{showToast("已自动同步分享链接（"+(reason||"数据更新")+"）","ok");}catch(e){}__syncing=false;return true;}
+    if(ok){try{showToast("已自动同步分享链接（"+(reason||"数据更新")+"）","ok");}catch(e){}__btnRestore();__syncing=false;return true;}
     try{showToast("同步失败("+msg+")：请点右上「导出备份」下载文件后发送给 WorkBuddy 手动更新","err",8000);}catch(e){}
     __syncing=false;
     return false;
   }catch(err){try{showToast("直推异常："+err.message+"，请用右上「立即同步」重试","err",6000);}catch(e){}}
-  __syncing=false;return false;
+  __btnRestore();__syncing=false;return false;
 }
 
 function downloadSnapshotFile(reason){
@@ -2754,12 +2755,7 @@ document.getElementById("fileInput").onchange=e=>{
   };
   rd.readAsText(f);
 };
-document.getElementById("btnClear").onclick=()=>{
-  showConfirm("仅清空预置的示例数据（不影响你后续自己添加的内容），确定？",()=>{
-    tasks=tasks.filter(t=>!t.seed);metrics=metrics.filter(m=>!m.seed);reports=reports.filter(r=>!r.seed);
-    save(KT,tasks);save(KM,metrics);save(KR,reports);renderAll();showToast("示例数据已清空","ok");
-  });
-};
+// C 修复：「清空示例」按钮已删除（A3 seed 脱敏后无示例数据可清）
 document.getElementById("btnClearTx").onclick=()=>{
   if(!getTx()){showToast("当前没有已导入的交易数据。","err");return;}
   showConfirm("将清除所有导入的交易数据（含累计的多个文件），不影响任务。确定？",()=>{
