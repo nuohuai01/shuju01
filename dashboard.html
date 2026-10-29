@@ -380,6 +380,10 @@
   .wb-cfm .m-input:focus{outline:2px solid #93c5fd;border-color:#3b82f6;}
   .wb-cfm .m-field{margin-top:12px;text-align:left;}
   .wb-cfm .m-field label{font-size:12px;color:#5b6b80;display:block;margin-bottom:2px;line-height:1.5;}
+  .more-wrap{position:relative;display:inline-block;}
+  .more-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #dbe4ef;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;flex-direction:column;gap:4px;z-index:1050;min-width:150px;}
+  .more-menu.show{display:flex;}
+  .more-menu .btn{width:100%;justify-content:flex-start;}
 
   /* 方案A 优化 */
   #alert{display:none!important;}
@@ -525,12 +529,15 @@ if(/share=1/.test(location.search)){(function(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>立即同步
       </button>
 
-      <button class="btn" id="btnLoadCloud" title="用云端最新数据覆盖本机（多端对齐；本机未同步的修改会丢失）">载入云端</button>
-      <button class="btn" id="btnSyncSettings" title="配置同步令牌与快照口令（仅存本机，不进源码不随快照上传）">同步设置</button>
-      <button class="btn" id="btnExportSnap" title="把本机全部数据导出为 JSON 备份文件（安全改造后恢复的备份入口，可配合「全站恢复」回滚）">导出备份</button>
-      <button class="btn" id="btnImport">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>全站恢复
-      </button>
+      <div class="more-wrap">
+        <button class="btn" id="btnMore" onclick="toggleMore(event)">更多 ▾</button>
+        <div class="more-menu" id="moreMenu">
+          <button class="btn" id="btnLoadCloud" title="用云端最新数据覆盖本机（多端对齐）">载入云端</button>
+          <button class="btn" id="btnSyncSettings" title="配置同步令牌与快照口令（仅存本机）">同步设置</button>
+          <button class="btn" id="btnExportSnap" title="导出本机全部数据为 JSON 备份文件">导出备份</button>
+          <button class="btn" id="btnImport" title="从备份 JSON 恢复全部数据">全站恢复</button>
+        </div>
+      </div>
       <span class="layout-ctl" id="layoutCtl" title="切换布局">
         <button class="btn sm" id="btnNarrow" onclick="setLayout('narrow')">单列</button>
         <button class="btn sm" id="btnWide" onclick="setLayout('wide')">双列</button>
@@ -1970,6 +1977,8 @@ function buildMapUI(headers){
 document.getElementById("btnLoadCloud").onclick=loadFromCloud;
 document.getElementById("btnSyncSettings").onclick=showSyncSettings;
 document.getElementById("btnExportSnap").onclick=()=>downloadSnapshotFile("手动备份");
+function toggleMore(e){if(e)e.stopPropagation();const m=document.getElementById("moreMenu");if(m)m.classList.toggle("show");}
+document.addEventListener("click",function(ev){const m=document.getElementById("moreMenu");const w=document.getElementById("moreWrap");if(m&&m.classList.contains("show")&&w&&!w.contains(ev.target))m.classList.remove("show");});
 // A2 分享模式：主脚本就绪后用页面内弹窗收集快照口令（处理 head 脚本暂存的加密快照）
 try{if(localStorage.getItem("shuling_demo_mode")==="1"&&location.search.indexOf("share=1")===-1){const g=document.getElementById("shareGate");if(g){g.style.display="flex";g.querySelector("span").textContent="🎭 演示模式：当前展示示例数据，非真实业务数据。";const b=g.querySelector("button");if(b)b.textContent="输入口令查看真实数据";}}}catch(e){}
 window.__askSharePwd=function(){
