@@ -598,7 +598,7 @@ if(/share=1/.test(location.search)){(function(){
     <p class="desc">支持数据导入、字段识别筛选、清除历史数据。导入后自动汇总并联动上方所有看板。再次上传按日去重合并（长期累积）。</p>
     <label class="btn primary" id="btnImportTx" for="txFile" style="display:flex;width:100%;justify-content:center;margin:0 0 10px;font-size:14px;cursor:pointer;">↑ 选择文件并导入（.xlsx / .csv）</label>
     <div class="dropzone" id="dropzone">点击上方按钮选择，或把 .xlsx / .csv 拖到这里（支持聚杰后台导出的明细格式）</div>
-    <input type="file" id="txFile" accept=".xlsx,.csv" class="file-hidden">
+    <input type="file" id="txFile" accept=".xlsx,.csv" class="file-hidden" multiple>
     <div id="mapPanel" class="hidden">
       <div class="map-row">
         <div class="mf"><label>日期列（订购/创建）</label><select id="mapDate"></select></div>
@@ -845,9 +845,11 @@ function idbDel(key){
   });
 }
 // 同步读：优先内存缓存，其次 localStorage（小数据/旧数据兜底）
+const TX_DAY_FIELDS=["productDay","typeSupDay","attrSupDay","prodTypeDay","prodAttrDay"];
+function ensureTxFields(tx){ if(tx&&tx.supplierDay){for(const f of TX_DAY_FIELDS){if(!tx[f])tx[f]={};}} return tx; }
 function getTx(){
-  if(_txCache)return _txCache;
-  try{return JSON.parse(localStorage.getItem(KTX))||null;}catch(e){return null;}
+  if(_txCache)return ensureTxFields(_txCache);
+  try{return ensureTxFields(JSON.parse(localStorage.getItem(KTX))||null);}catch(e){return null;}
 }
 // 同步写：更新内存缓存 + 小数据双写 localStorage（兼容旧环境）+ 异步写 IndexedDB（大数据）
 function setTx(v){
@@ -1840,19 +1842,25 @@ function mergeTx(old, incoming){
   const merge3D=(a,b)=>{ if(!b) return; for(const pn in b){ a[pn]=a[pn]||{}; for(const sp in b[pn]){ a[pn][sp]=a[pn][sp]||{}; for(const m in b[pn][sp]){ const inc=b[pn][sp][m]||{dev:0,unsub:0}; const cur=a[pn][sp][m]||{dev:0,unsub:0}; cur.dev=inc.dev; cur.monthDev=inc.monthDev||0; cur.unsub=inc.unsub; a[pn][sp][m]=cur; } } } };
   // 原地合并（不深拷贝旧数据）：old 来自 localStorage 可安全 mutate，避免大对象全量复制导致慢
   const out=old;
-  ["supplierDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","typeSupMonth","attrSupMonth","prodTypeMonth","prodAttrMonth","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
+  ["supplierDay","productDay","typeSupDay","attrSupDay","prodTypeDay","prodAttrDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","typeSupMonth","attrSupMonth","prodTypeMonth","prodAttrMonth","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
   out.meta.importedFiles=out.meta.importedFiles||[];
   out.meta.statusCounts=out.meta.statusCounts||{};
+  // 2026-11-06 修复：10-29 版新增的 5 个日粒度字段未加入上方初始化清单，旧结构 tx 首次导入即崩
+  // （cov2D 里 a[k] 读 undefined）。legacyBase=旧结构 tx：历史月度桶保留，仅并入未覆盖日期的增量。
+  const legacyBase=!(out.productDay&&Object.keys(out.productDay).length);
+  const legacyDays=new Set(); if(legacyBase){for(const sp in out.supplierDay)for(const dt in out.supplierDay[sp])legacyDays.add(dt);}
   merge2D(out.supplierDay, incoming.supplierDay);
   cov2D(out.typeDay, incoming.typeDay);
   cov2D(out.attrDay, incoming.attrDay);
   merge3D(out.prodSupMonth, incoming.prodSupMonth); // 3D 按月覆盖（原语义正确，保留）
   // B3 改造：5 个维度改「日粒度覆盖 + 月度派生」，重导同批文件不再重复计数
-  cov2D(out.productDay, incoming.productDay);
-  cov3D(out.typeSupDay, incoming.typeSupDay);
-  cov3D(out.attrSupDay, incoming.attrSupDay);
-  cov3D(out.prodTypeDay, incoming.prodTypeDay);
-  cov3D(out.prodAttrDay, incoming.prodAttrDay);
+  if(!legacyBase){
+    cov2D(out.productDay, incoming.productDay);
+    cov3D(out.typeSupDay, incoming.typeSupDay);
+    cov3D(out.attrSupDay, incoming.attrSupDay);
+    cov3D(out.prodTypeDay, incoming.prodTypeDay);
+    cov3D(out.prodAttrDay, incoming.prodAttrDay);
+  }
   const rebuildMonthFromDays=()=>{
     const sum2=(src)=>{const o={};for(const k1 in src){o[k1]={};for(const dt in src[k1]){const mm=String(dt).slice(0,7);const c=src[k1][dt]||{};const t=o[k1][mm]=o[k1][mm]||{dev:0,unsub:0,monthDev:0};t.dev+=c.dev||0;t.unsub+=c.unsub||0;t.monthDev+=c.monthDev||0;}}return o;};
     const sum3=(src)=>{const o={};for(const k1 in src){o[k1]={};for(const k2 in src[k1]){o[k1][k2]={};for(const dt in src[k1][k2]){const mm=String(dt).slice(0,7);const c=src[k1][k2][dt]||{};const t=o[k1][k2][mm]=o[k1][k2][mm]||{dev:0,unsub:0,monthDev:0};t.dev+=c.dev||0;t.unsub+=c.unsub||0;t.monthDev+=c.monthDev||0;}}}return o;};
@@ -1862,6 +1870,23 @@ function mergeTx(old, incoming){
     if(out.prodTypeDay&&Object.keys(out.prodTypeDay).length)out.prodTypeMonth=sum3(out.prodTypeDay);
     if(out.prodAttrDay&&Object.keys(out.prodAttrDay).length)out.prodAttrMonth=sum3(out.prodAttrDay);
   };
+  if(legacyBase){
+    // 旧结构迁移：历史月度桶以合成日键（mm+"-00"，永不与真实日期冲突）写回日粒度，之后统一重建月度桶
+    // ——历史保留、新日期并入、总量不重复。升级前已导入过的日期不再并入（其数值已含在合成月桶内）。
+    for(const pn in out.productMonth){out.productDay[pn]=out.productDay[pn]||{};for(const mm in out.productMonth[pn]){out.productDay[pn][mm+"-00"]=out.productMonth[pn][mm];}}
+    const back3=(day3,month3)=>{for(const k1 in month3){day3[k1]=day3[k1]||{};for(const k2 in month3[k1]){day3[k1][k2]=day3[k1][k2]||{};for(const mm in month3[k1][k2]){day3[k1][k2][mm+"-00"]=month3[k1][k2][mm];}}}};
+    back3(out.typeSupDay, out.typeSupMonth);
+    back3(out.attrSupDay, out.attrSupMonth);
+    back3(out.prodTypeDay, out.prodTypeMonth);
+    back3(out.prodAttrDay, out.prodAttrMonth);
+    const addDay2=(day2,in2)=>{for(const k1 in (in2||{})){day2[k1]=day2[k1]||{};for(const dt in in2[k1]){if(legacyDays.has(dt))continue;day2[k1][dt]=in2[k1][dt];}}};
+    const addDay3=(day3,in3)=>{for(const k1 in (in3||{})){day3[k1]=day3[k1]||{};for(const k2 in in3[k1]){day3[k1][k2]=day3[k1][k2]||{};for(const dt in in3[k1][k2]){if(legacyDays.has(dt))continue;day3[k1][k2][dt]=in3[k1][k2][dt];}}}};
+    addDay2(out.productDay, incoming.productDay);
+    addDay3(out.typeSupDay, incoming.typeSupDay);
+    addDay3(out.attrSupDay, incoming.attrSupDay);
+    addDay3(out.prodTypeDay, incoming.prodTypeDay);
+    addDay3(out.prodAttrDay, incoming.prodAttrDay);
+  }
   rebuildMonthFromDays();
   if(!Array.isArray(out.partyRows))out.partyRows=[];
   if(Array.isArray(incoming.partyRows))out.partyRows=out.partyRows.concat(incoming.partyRows);
@@ -2017,6 +2042,7 @@ async function doImportCore(map){
       if(merged.meta.dateMin&&merged.meta.dateMax!=="0000"){msg+=" 数据区间 "+merged.meta.dateMin+"~"+merged.meta.dateMax+"。";}
       if(tx.meta.partyRowsTrimmed||merged.meta.partyRowsTrimmed)msg+=" 大文件已精简渠道方明细（仅保留未识别渠道方，渠道类型/属性重算仅对保留部分生效）。";
       msg+=" 状态分布："+scStr;
+    window.__lastImportStatus="ok";
     showToast(msg,"ok");
     try{autoShareAfterImport();}catch(_){}
     // 导入成功后自动切换到本次数据最新月份，让用户直接看到新数据（避免停留在「今日」误以为没更新）
@@ -2028,7 +2054,26 @@ async function doImportCore(map){
         showToast("已自动切换到最新数据日期："+txY+"年"+parseInt(txM,10)+"月","ok");
       }
     }catch(e){}
-  }catch(err){showToast("解析失败："+err.message,"err");document.getElementById("txMeta").textContent="尚未导入数据，上传文件后自动生成下方看板。";}
+  }catch(err){window.__lastImportStatus="err:"+(err&&err.message||"");showToast("解析失败："+err.message,"err");document.getElementById("txMeta").textContent="尚未导入数据，上传文件后自动生成下方看板。";}
+}
+// 2026-11-06 批量导入：多文件逐个自动「读表头→套用自动映射→导入」，无需逐个确认
+async function handleTxBatch(files){
+  let okN=0;const errs=[];
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    const meta=document.getElementById("txMeta");
+    if(meta)meta.textContent="批量导入 "+(i+1)+"/"+files.length+"："+f.name;
+    window.__lastImportStatus="running";window.__txBuf=null;window.__txText=null;
+    await handleTxFile(f);
+    if(!window.__txBuf&&!window.__txText){errs.push(f.name+"（读取失败）");continue;}
+    const map={date:txVal("mapDate"),unsubdate:txVal("mapUnsubDate"),status:txVal("mapStatus"),supplier:txVal("mapSupplier"),product:txVal("mapProduct"),prov:txVal("mapProv"),ch:txVal("mapCh"),party:txVal("mapParty"),sku:txVal("mapSku"),op:txVal("mapOp"),ono:txVal("mapOno")};
+    if(map.status==null||map.supplier==null||map.product==null){errs.push(f.name+"（缺少 状态/供货方/包名 列映射，已跳过）");continue;}
+    await doImportCore(map);
+    if(window.__lastImportStatus==="ok")okN++;else errs.push(f.name+"（导入失败）");
+  }
+  const meta=document.getElementById("txMeta");
+  if(meta)meta.textContent="批量导入结束：成功 "+okN+" / "+files.length+" 个"+(errs.length?("。失败明细："+errs.join("；")):"。");
+  try{showToast("批量导入结束：成功 "+okN+" / "+files.length+" 个"+(errs.length?("，失败 "+errs.length+" 个，见导入区说明"):""),errs.length?"err":"ok",8000);}catch(e){}
 }
 function txVal(id){
   const el=document.getElementById(id);
@@ -2720,10 +2765,10 @@ document.getElementById("cmBatchFile").onchange=async e=>{
   }catch(err){showToast("批量导入失败："+err.message,"err");}
   e.target.value="";
 };
-document.getElementById("txFile").onchange=e=>{if(e.target.files[0])handleTxFile(e.target.files[0]);e.target.value="";};
+document.getElementById("txFile").onchange=e=>{const fs=[...(e.target.files||[])];e.target.value="";if(fs.length>1)handleTxBatch(fs);else if(fs.length===1)handleTxFile(fs[0]);};
 ["dragover","dragenter"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add("over");}));
 ["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove("over");}));
-dz.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)handleTxFile(f);});
+dz.addEventListener("drop",e=>{const fs=[...(e.dataTransfer.files||[])].filter(f=>/\.(xlsx|csv)$/i.test(f.name));if(fs.length>1)handleTxBatch(fs);else if(fs.length===1)handleTxFile(fs[0]);});
 
 // ---- 备份 / 清空 ----
 // 同步 / 恢复 / 清空
