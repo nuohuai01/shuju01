@@ -596,9 +596,10 @@ if(/share=1/.test(location.search)){(function(){
       数据导入
     </h2>
     <p class="desc">支持数据导入、字段识别筛选、清除历史数据。导入后自动汇总并联动上方所有看板。再次上传按日去重合并（长期累积）。</p>
-    <label class="btn primary" id="btnImportTx" for="txFile" style="display:flex;width:100%;justify-content:center;margin:0 0 10px;font-size:14px;cursor:pointer;">↑ 选择文件并导入（.xlsx / .csv）</label>
-    <div class="dropzone" id="dropzone">点击上方按钮选择，或把 .xlsx / .csv 拖到这里（支持聚杰后台导出的明细格式）</div>
+    <label class="btn primary" id="btnImportTx" for="txFile" style="display:flex;width:100%;justify-content:center;margin:0 0 10px;font-size:14px;cursor:pointer;">↑ 选择文件并导入（可多选批量 · 自动识别列映射）</label>
+    <div class="dropzone" id="dropzone">点击上方按钮选择，或把 .xlsx / .csv 拖到这里（自动识别聚杰后台格式，多个文件可一次拖入）</div>
     <input type="file" id="txFile" accept=".xlsx,.csv" class="file-hidden" multiple>
+    <div style="text-align:right;margin:-2px 0 8px;"><a href="javascript:void(0)" id="mapToggle" class="linkbtn" style="font-size:12px;">列映射（高级，一般无需调整）</a></div>
     <div id="mapPanel" class="hidden">
       <div class="map-row">
         <div class="mf"><label>日期列（订购/创建）</label><select id="mapDate"></select></div>
@@ -1971,8 +1972,18 @@ async function handleTxFile(file){
     else if(file.name.toLowerCase().endsWith(".xlsx")){window.__txBuf=await file.arrayBuffer();headers=await xlsxHeader(window.__txBuf);}
     else{showToast("只支持 .xlsx 或 .csv 文件","err");return;}
     if(!headers||headers.length===0){showToast("文件里没有可识别的表头","err");return;}
-    buildMapUI(headers);
+    const auto=buildMapUI(headers);
+    // 2026-11-06：自动映射成熟，单文件也不再让用户确认——直接导入；仅关键列识别失败时才弹映射面板
+    if(auto&&!window.__txBatch){
+      const meta=document.getElementById("txMeta");
+      if(meta)meta.textContent="已自动识别列映射，正在导入："+file.name;
+      window.__lastImportStatus="running";
+      await doImportCore(currentTxMap());
+    }
   }catch(err){showToast("读取失败："+err.message,"err");document.getElementById("txMeta").textContent="尚未导入数据，上传文件后自动生成下方看板。";}
+}
+function currentTxMap(){
+  return {date:txVal("mapDate"),unsubdate:txVal("mapUnsubDate"),status:txVal("mapStatus"),supplier:txVal("mapSupplier"),product:txVal("mapProduct"),prov:txVal("mapProv"),ch:txVal("mapCh"),party:txVal("mapParty"),sku:txVal("mapSku"),op:txVal("mapOp"),ono:txVal("mapOno")};
 }
 function buildMapUI(headers){
   const sets=[
@@ -1996,10 +2007,29 @@ function buildMapUI(headers){
     for(const a of aliases){const i=headers.findIndex(h=>h&&h.includes(a));if(i>=0){idx=i;break;}}
     if(idx>=0)sel.value=String(idx);
   });
-  document.getElementById("mapNote").textContent="确认列映射后点「导入并更新看板」。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；订单日期优先取「订购时间」；「退订日期列」用于同月退订校验（退订月≠订购月不计入退订率，单独计为跨月）；SKU业务类型=「流量-次包」的行不计入退订率（分子分母同步剔除）；同份文件内部按订单号去重。";
-  document.getElementById("mapPanel").classList.remove("hidden");
+  // 2026-11-06：自动映射成熟——关键列齐 → 面板保持隐藏（调用方直接自动导入）；缺关键列 → 弹面板让用户手选
+  const miss=[];
+  if(txVal("mapStatus")==null)miss.push("交易状态");
+  if(txVal("mapSupplier")==null)miss.push("供货方");
+  if(txVal("mapProduct")==null)miss.push("包名(产品)");
+  const noteEl=document.getElementById("mapNote");
+  if(miss.length){
+    noteEl.textContent="⚠️ 未自动识别到关键列："+miss.join("、")+"。请在上方手动选择对应列，再点「导入并更新看板」。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；订单日期优先取「订购时间」；「退订日期列」用于同月退订校验（退订月≠订购月不计入退订率，单独计为跨月）；SKU业务类型=「流量-次包」的行不计入退订率（分子分母同步剔除）；同份文件内部按订单号去重。调整映射重新导入是安全的（按天覆盖，不会重复计数）。";
+    if(!window.__txBatch)document.getElementById("mapPanel").classList.remove("hidden");
+    return false;
+  }
+  noteEl.textContent="已自动识别列映射（日期优先「订购时间」）。口径（白名单）：仅统计交易状态=办理成功/交易成功（发展订单）、成功后退订（发展订单+退订）；预提交成功/交易失败/已取消等一律不计；流量-次包不计入退订率；同份文件内按订单号去重。如需调整映射，改完后点「导入并更新看板」将按新映射重新合并该文件（按天覆盖，安全）。";
+  document.getElementById("mapPanel").classList.add("hidden");
+  return true;
 }
 document.getElementById("btnLoadCloud").onclick=loadFromCloud;
+document.getElementById("mapToggle").onclick=()=>{
+  const p=document.getElementById("mapPanel");
+  const nowHidden=p.classList.toggle("hidden");
+  const a=document.getElementById("mapToggle");
+  if(a)a.textContent=nowHidden?"列映射（高级，一般无需调整）":"收起列映射";
+  if(!nowHidden){const n=document.getElementById("mapNote");if(n&&!n.textContent)n.textContent="手动模式：选择各列后点「导入并更新看板」。调整映射重新导入是安全的（按天覆盖，不会重复计数）。";}
+};
 document.getElementById("btnSyncSettings").onclick=showSyncSettings;
 document.getElementById("btnExportSnap").onclick=()=>downloadSnapshotFile("手动备份");
 function toggleMore(e){if(e)e.stopPropagation();const m=document.getElementById("moreMenu");if(m)m.classList.toggle("show");}
@@ -2058,6 +2088,7 @@ async function doImportCore(map){
 }
 // 2026-11-06 批量导入：多文件逐个自动「读表头→套用自动映射→导入」，无需逐个确认
 async function handleTxBatch(files){
+  window.__txBatch=true;
   let okN=0;const errs=[];
   for(let i=0;i<files.length;i++){
     const f=files[i];
@@ -2073,6 +2104,7 @@ async function handleTxBatch(files){
   }
   const meta=document.getElementById("txMeta");
   if(meta)meta.textContent="批量导入结束：成功 "+okN+" / "+files.length+" 个"+(errs.length?("。失败明细："+errs.join("；")):"。");
+  window.__txBatch=false;
   try{showToast("批量导入结束：成功 "+okN+" / "+files.length+" 个"+(errs.length?("，失败 "+errs.length+" 个，见导入区说明"):""),errs.length?"err":"ok",8000);}catch(e){}
 }
 function txVal(id){
