@@ -238,6 +238,9 @@
     .kpi{padding:10px;}
     .kpi .vl{font-size:19px;}
     .kpi-tip{font-size:11.5px;line-height:1.55;padding:7px 9px;margin-top:6px;}
+    .kpi-spark{width:100%;height:22px;display:block;margin-top:4px;}
+    .trend-bars{width:76px;height:18px;display:block;}
+    #kpiTable{min-width:880px;}
     .alert{font-size:12.5px;padding:7px 10px;}
     #kpiPie .pie-wrap{flex-direction:column;align-items:center;gap:10px;}
     #kpiPie .legend{grid-template-columns:1fr 1fr;width:100%;}
@@ -1440,6 +1443,39 @@ document.getElementById("taskForm").onsubmit=e=>{
 };
 
 // ---- 关键指标（机构发展订单量饼图 + 发展订单数量 + 环比上期，联动数据周期筛选）----
+// 2026-11-17 新增：机构表「近7日趋势」小柱（悬停显示日期与数值）
+function trendBarsSVG(t7){
+  if(!t7||!t7.length)return "";
+  const W=80,H=18;const mx=Math.max(1,...t7.map(x=>x.v));
+  const step=W/t7.length,bw=step-2;
+  let out=`<svg class="trend-bars" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  t7.forEach((x,i)=>{const h=Math.max(1,x.v/mx*(H-2));const bx=(i*step+1).toFixed(1);const by=(H-1-h).toFixed(1);
+    out+=`<rect x="${bx}" y="${by}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="#8b5cf6" fill-opacity="${i===t7.length-1?"0.9":"0.45"}" rx="1"><title>${x.dt} · ${fmt(x.v)} 笔</title></rect>`;});
+  return out+`</svg>`;
+}
+// 2026-11-17 新增：KPI 卡「本月 vs 上月同位置」双迷你线（几号对几号；灰虚线尾部=按上月节奏外推；悬停显示每日数值）
+function kpiSparkSVG(curAgg,prevAgg,ym,pym,field){
+  const md=new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate();
+  const val=c=>field==="rate"?(c.monthDev?((c.unsub||0)/c.monthDev*100):0):(c[field]||0);
+  let max=0;const cur=[],prev=[];
+  for(let d=1;d<=md;d++){const dts=ym+"-"+String(d).padStart(2,"0");
+    const cv=curAgg[dts]?val(curAgg[dts]):null, pv=prevAgg[dts]?val(prevAgg[dts]):null;
+    cur.push(cv);prev.push(pv);max=Math.max(max,cv||0,pv||0);}
+  if(max<=0)return "";
+  max*=1.08;
+  const W=120,H=26;
+  const x=d=>d===1?1:1+(d-1)/(md-1)*(W-2);
+  const y=v=>H-2-(v/max)*(H-6);
+  const pts=a=>a.map((v,i)=>v==null?null:x(i+1).toFixed(1)+","+y(v).toFixed(1)).filter(Boolean).join(" ");
+  let dots="";
+  for(let i=0;i<md;i++){if(cur[i]==null)continue;
+    const num=v=>field==="rate"?v.toFixed(1)+"%":fmt(Math.round(v))+" 笔";
+    const tip=(+ym.slice(5,7))+"月"+(i+1)+"日 · 本月 "+num(cur[i])+(prev[i]!=null?(" · 上月同期 "+num(prev[i])):"");
+    dots+=`<circle cx="${x(i+1).toFixed(1)}" cy="${y(cur[i]).toFixed(1)}" r="4" fill="transparent"><title>${esc(tip)}</title></circle>`;}
+  const pl=(p,dash,color)=>p?`<polyline points="${p}" fill="none" stroke="${color}" stroke-width="1.6" stroke-dasharray="${dash||""}" vector-effect="non-scaling-stroke"/>`:"";
+  return `<svg class="kpi-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`+pl(pts(prev),"3 2","#9ca3af")+pl(pts(cur),"","#8b5cf6")+dots+`</svg>`;
+}
+function prevYmStr(ym){const y=+ym.slice(0,4),m=+ym.slice(5,7);const pm=m===1?12:m-1,py=m===1?y-1:y;return py+"-"+String(pm).padStart(2,"0");}
 function renderMetrics(){
   const boxPie=document.getElementById("kpiPie"), boxTable=document.getElementById("kpiTable");
   const pt=document.getElementById("kpiPieTitle"), tt=document.getElementById("kpiTableTitle");
@@ -1462,6 +1498,9 @@ function renderMetrics(){
     return;
   }
   const single=scoped.length===1;
+  // 2026-11-17 机构表新增「近7日趋势 + 周环比」列：取数据集中最新的 7 个日期（不受时间范围影响）
+  const lastDates=(function(){const s=new Set();for(const sp in tx.supplierDay)for(const dt in tx.supplierDay[sp])s.add(dt);return [...s].sort().slice(-14);})();
+  const last7=lastDates.slice(-7), prev7=lastDates.slice(0,7);
   let rows=Object.keys(sup).map(sp=>{
     let dev=0,monthDev=0,unsub=0,monthUnsub=0,hb=null;
     if(single){
@@ -1474,7 +1513,12 @@ function renderMetrics(){
     }else{
       scoped.forEach(p=>{const c=sup[sp][p];if(c){dev+=c.dev;monthDev+=c.monthDev||0;unsub+=c.unsub;monthUnsub+=(c.monthUnsub!==undefined?c.monthUnsub:c.unsub);}});
     }
-    return {sp,dev,monthDev,unsub,monthUnsub,rate:monthDev>0?(monthUnsub/monthDev*100):0,hb};
+    const _sd=tx.supplierDay[sp]||{};
+    const t7=last7.map(dt=>({dt,v:(_sd[dt]||{}).dev||0}));
+    const l7=t7.reduce((s,x)=>s+x.v,0);
+    const p7=prev7.reduce((s,dt)=>s+((_sd[dt]||{}).dev||0),0);
+    const wk=(l7>0&&p7>0)?((l7-p7)/p7*100):null;
+    return {sp,dev,monthDev,unsub,monthUnsub,rate:monthDev>0?(monthUnsub/monthDev*100):0,hb,t7,wk};
   }).filter(r=>r.dev>0).sort((a,b)=>b.dev-a.dev);
   if(supFocus){rows=rows.filter(r=>supHit(r.sp));}
   const total=rows.reduce((s,r)=>s+r.dev,0);
@@ -1493,7 +1537,7 @@ function renderMetrics(){
     const _pg=document.getElementById("txKpiPieBox");
     if(_pg)_pg.setAttribute("data-dimgroup","kpiPie");
   }
-  if(boxTable)boxTable.innerHTML=`<thead><tr><th>机构</th><th>发展订单量<span class="u">（笔）</span></th><th>占比<span class="u">（%）</span></th><th>环比<span class="u">（上期，%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>`+
+  if(boxTable)boxTable.innerHTML=`<thead><tr><th>机构</th><th>近 7 日趋势</th><th>周环比<span class="u">（%）</span></th><th>发展订单量<span class="u">（笔）</span></th><th>占比<span class="u">（%）</span></th><th>环比<span class="u">（上期，%）</span></th><th>退订数<span class="u">（笔）</span></th><th>退订率<span class="u">（%）</span></th><th>退订率月环比<span class="u">（%）</span></th></tr></thead><tbody>`+
     rows.map(r=>{const pct=total>0?r.dev/total*100:0;const hbTxt=r.hb==null?'—':(r.hb>=0?'▲ +':'▼ ')+r.hb.toFixed(1)+'%';const hbCls=r.hb==null?'flat':(r.hb>=0?'up':'down');const rc=r.rate>=15?'#ef4444':r.rate>=8?'#f59e0b':'#10b981';const short=supplierLabel(r.sp);
       var rateH=null,rateHCls='';
   if(single && scoped[0]){
@@ -1505,7 +1549,7 @@ function renderMetrics(){
   }
   var rateHTxt=rateH===null?'—':(rateH>=0?'▲ +':'▼ ')+Math.abs(rateH).toFixed(1)+'%';
   var rateHCls=rateH===null?'flat':(rateH>=0?'up':'down');  /* 退订率涨=差=红，跌=好=绿 */
-  return `<tr class="${supHit(r.sp)?'sup-hit':''}"><td class="nm" title="${esc(r.sp)}">${archiveLink(r.sp,short)}</td><td>${fmt(r.dev)}</td><td class="rate">${pct.toFixed(2)}%</td><td class="${hbCls}">${hbTxt}</td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${rc}">${r.rate.toFixed(2)}%</td><td class="${rateHCls}">${rateHTxt}</td></tr>`;}).join("")+`</tbody>`;
+  return `<tr class="${supHit(r.sp)?'sup-hit':''}"><td class="nm" title="${esc(r.sp)}">${archiveLink(r.sp,short)}</td><td>${trendBarsSVG(r.t7)}</td><td class="${r.wk==null?'flat':(r.wk>=0?'up':'down')}">${r.wk==null?'—':(r.wk>=0?'▲ +':'▼ ')+Math.abs(r.wk).toFixed(1)+'%'}</td><td>${fmt(r.dev)}</td><td class="rate">${pct.toFixed(2)}%</td><td class="${hbCls}">${hbTxt}</td><td>${fmt(r.unsub)}</td><td class="rate" style="color:${rc}">${r.rate.toFixed(2)}%</td><td class="${rateHCls}">${rateHTxt}</td></tr>`;}).join("")+`</tbody>`;
 }
 function renderMonthly(){
   const box=document.getElementById("monthlyTable");
@@ -2241,25 +2285,29 @@ function renderTx(){
   dSel.innerHTML=`<option value="">${dFirstLabel}</option>`+[...new Set(dList)].sort().map(dd=>`<option value="${dd}">${dd}日</option>`).join("");dSel.value=txD;
   const sl=document.getElementById("txScopeLabel");if(sl)sl.textContent=scopeLabel();
   // ---- 一次主遍历：KPI / 每日索引 / 月度 / 全部日期（合并原多次重复遍历）----
-  let dev=0,monthDev=0,unsub=0;const allDates=[];const monthMap={};const idxMonth={};
+  let dev=0,monthDev=0,unsub=0;const allDates=[];const monthMap={};const idxMonth={};const dayAgg={};
   for(const sp in tx.supplierDay)for(const d in tx.supplierDay[sp]){
     if(supFocus&&!supHit(sp))continue;
     const c=tx.supplierDay[sp][d];allDates.push(d);
+    (dayAgg[d]=dayAgg[d]||{dev:0,monthDev:0,unsub:0});const _g=dayAgg[d];_g.dev+=c.dev||0;_g.monthDev+=c.monthDev||0;_g.unsub+=c.unsub||0;
     if(inScope(d)){dev+=c.dev;monthDev+=c.monthDev||0;unsub+=c.unsub;const m=d.slice(0,7);monthMap[m]=(monthMap[m]||0)+c.dev;(idxMonth[m]=idxMonth[m]||{})[d]=(idxMonth[m][d]||0)+c.dev;}
   }
   allDates.sort();
   const rate=monthDev?unsub/monthDev*100:0;
   const rateCls=rate>=15?'hi':rate>=8?'mid':'lo';
-  document.getElementById("txKpis").innerHTML=`
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">发展订单数</div><div class="vl">${fmt(dev)}<span class="u">笔</span></div></div>
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">月包订单量</div><div class="vl">${fmt(monthDev)}<span class="u">笔</span></div></div>
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">退订数</div><div class="vl">${fmt(unsub)}<span class="u">笔</span></div></div>
-    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div></div>`
-    +`<div class="kpi-tip">月包订单量 = 办理成功 + 退订订单数（流量-次包不计入，但计入发展订单总数）；月包退订率 = 退订数 ÷ 月包订单量 × 100%</div>`;
+  // 2026-11-17：KPI 卡双迷你线（本月 vs 上月同位置）；monthForDaily 前移供迷你线使用
   let monthForDaily=null;
   if(txM) monthForDaily=(txY?txY:allDates.length?allDates[allDates.length-1].slice(0,4):todayStr().slice(0,4))+"-"+txM;
   else if(txY){const ys=allDates.filter(d=>d.startsWith(txY));monthForDaily=ys.length?ys[ys.length-1].slice(0,7):null;}
   else monthForDaily=allDates.length?allDates[allDates.length-1].slice(0,7):null;
+  const _prevM=monthForDaily?prevYmStr(monthForDaily):null;
+  const spark=f=>monthForDaily?kpiSparkSVG(dayAgg,dayAgg,monthForDaily,_prevM,f):"";
+  document.getElementById("txKpis").innerHTML=`
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">发展订单数</div><div class="vl">${fmt(dev)}<span class="u">笔</span></div>${spark("dev")}</div>
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">月包订单量</div><div class="vl">${fmt(monthDev)}<span class="u">笔</span></div>${spark("monthDev")}</div>
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">退订数</div><div class="vl">${fmt(unsub)}<span class="u">笔</span></div>${spark("unsub")}</div>
+    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div>${spark("rate")}</div>`
+    +`<div class="kpi-tip">月包订单量 = 办理成功 + 退订订单数（流量-次包不计入，但计入发展订单总数）；月包退订率 = 退订数 ÷ 月包订单量 × 100%；迷你趋势线：紫实线=本月逐日，灰虚线=上月同位置（尾部虚线=按上月节奏外推），悬停显示每日数值</div>`;
   const daySrc=monthForDaily?(idxMonth[monthForDaily]||{}):{};
   const trendArr=Object.keys(daySrc).sort().map(d=>({label:parseInt(d.slice(8),10)+"日",val:daySrc[d]}));
   document.getElementById("txTrendCount").innerHTML=lineSVG(trendArr,"#4f46e5","笔");
