@@ -715,6 +715,15 @@ if(/share=1/.test(location.search)){(function(){
       </div>
     </div>
 
+    <div class="sec" id="txPartySup">
+      <div class="sec-title collapsible" onclick="toggleSec('txPartySup')"><span class="chev">▾</span><span id="txPartySupTitleText">渠道 × 供货方质态矩阵（限额管控视图 · 跟随时间范围联动）</span></div>
+      <div class="sec-body">
+        <div class="tx-note">行=渠道方，列=供货方，格子=该渠道跑该供货方的月包退订率（色阶）与订单量，用于调整渠道限额保证整体质态。悬停格子显示发展/月包/退订明细。口径与全站一致（白名单、次包剔除）。</div>
+        <div class="tx-legend"><span class="lg"><span class="sw" style="background:#fecaca"></span>退订率 ≥15% 高危</span><span class="lg"><span class="sw" style="background:#fde68a"></span>8%–15% 关注</span><span class="lg"><span class="sw" style="background:#d1fae5"></span>&lt;8% 健康</span><span class="lg">灰=未投放</span></div>
+        <div class="table-wrap no-scroll"><table class="tx-table" id="txPartySupTable"></table></div>
+      </div>
+    </div>
+
     <div class="sec-duo">
     <div class="sec" id="txTypeSec">
       <div class="sec-title collapsible" onclick="toggleSec('txTypeSec')"><span class="chev">▾</span><span id="txTypeTitleText">渠道类型分析（周期内发展订单数量、占比 · 饼图）</span></div>
@@ -1738,7 +1747,7 @@ function parseCellsStr(xml,sst){
   return m;
 }
 function periodKey(d,gran){if(gran==="year")return d.slice(0,4);if(gran==="month")return d.slice(0,7);return d;}
-function makeCtx(){return{supplierDay:{},productDay:{},typeSupDay:{},attrSupDay:{},prodTypeDay:{},prodAttrDay:{},productMonth:{},prodSupMonth:{},prov:{},ch:{},provDay:{},chDay:{},provOpDay:{},chOpDay:{},typeDay:{},attrDay:{},typeSupMonth:{},attrSupMonth:{},prodTypeMonth:{},prodAttrMonth:{},partyRows:[],partyMapped:false,statusCounts:{},totalDev:0,totalMonthDev:0,totalUnsub:0,rows:0,dateMin:"9999",dateMax:"0000",orderKeys:new Set(),orderDuplicated:0,skuSkipped:0,statusSkipped:0,dateSkipped:0};}
+function makeCtx(){return{supplierDay:{},productDay:{},typeSupDay:{},attrSupDay:{},prodTypeDay:{},prodAttrDay:{},partySupDay:{},productMonth:{},prodSupMonth:{},prov:{},ch:{},provDay:{},chDay:{},provOpDay:{},chOpDay:{},typeDay:{},attrDay:{},typeSupMonth:{},attrSupMonth:{},prodTypeMonth:{},prodAttrMonth:{},partyRows:[],partyMapped:false,statusCounts:{},totalDev:0,totalMonthDev:0,totalUnsub:0,rows:0,dateMin:"9999",dateMax:"0000",orderKeys:new Set(),orderDuplicated:0,skuSkipped:0,statusSkipped:0,dateSkipped:0};}
 function accRow(ctx,cm,hm){
   const g=k=>hm[k]!=null?(cm[hm[k]]||""):"";
   const status=g("status"),sp=g("supplier"),pn=g("product"),partyRaw=g("party"),dtRaw=g("date"),ono=g("ono"),udRaw=g("unsubdate");
@@ -1803,6 +1812,14 @@ function accRow(ctx,cm,hm){
         ctx.attrSupMonth[attrKey]=ctx.attrSupMonth[attrKey]||{};const asb=ctx.attrSupMonth[attrKey][sp]=ctx.attrSupMonth[attrKey][sp]||{};const as=asb[ymS]=asb[ymS]||{dev:0,unsub:0,monthDev:0};as.dev++;if(!skip)as.monthDev++;if(cs.unsub&&!skip)as.unsub++;
         ctx.attrSupDay[attrKey]=ctx.attrSupDay[attrKey]||{};const asd=ctx.attrSupDay[attrKey][sp]=ctx.attrSupDay[attrKey][sp]||{};const asd2=asd[dt]=asd[dt]||{dev:0,unsub:0,monthDev:0};asd2.dev++;if(!skip)asd2.monthDev++;if(cs.unsub&&!skip)asd2.unsub++;
       }
+      // 「渠道方 × 供货方 × 日期」维度（2026-11-17）：渠道×供货方质态矩阵的数据源，用于渠道限额管控
+      if(party&&sp&&(cs.dev||cs.unsub)){
+        ctx.partySupDay[party]=ctx.partySupDay[party]||{};
+        const psd=ctx.partySupDay[party][sp]=ctx.partySupDay[party][sp]||{};
+        const pc=psd[dt]=psd[dt]||{dev:0,monthDev:0,unsub:0};
+        if(cs.dev){pc.dev++;if(!skip)pc.monthDev++;}
+        if(cs.unsub&&!skip)pc.unsub++;
+      }
     }
   }else{
     // B2 修复：只有日期非法的行才落到这里（原 statusSkipped 分支在 else 内条件恒假，已移入主分支）
@@ -1862,7 +1879,7 @@ function finalizeTx(ctx){
     ctx.partyRowsTrimmed=true;
   }
   return {meta:{file:window.__txFile,importedFiles:[window.__txFile],rows:ctx.rows,uniqueOrders:ctx.orderKeys.size,duplicated:ctx.orderDuplicated,skuSkipped:ctx.skuSkipped,statusSkipped:ctx.statusSkipped,dateSkipped:ctx.dateSkipped,time:new Date().toLocaleString("zh-CN"),dateMin:ctx.dateMin,dateMax:ctx.dateMax,statusCounts:ctx.statusCounts,partyRowsTrimmed:!!ctx.partyRowsTrimmed,partyMapped:ctx.partyMapped},
-    supplierDay:ctx.supplierDay,productDay:ctx.productDay,typeSupDay:ctx.typeSupDay,attrSupDay:ctx.attrSupDay,prodTypeDay:ctx.prodTypeDay,prodAttrDay:ctx.prodAttrDay,
+    supplierDay:ctx.supplierDay,productDay:ctx.productDay,typeSupDay:ctx.typeSupDay,attrSupDay:ctx.attrSupDay,prodTypeDay:ctx.prodTypeDay,prodAttrDay:ctx.prodAttrDay,partySupDay:ctx.partySupDay,
     productMonth:ctx.productMonth,prodSupMonth:ctx.prodSupMonth,prov:ctx.prov,ch:ctx.ch,provDay:ctx.provDay,chDay:ctx.chDay,
     provOpDay:ctx.provOpDay,chOpDay:ctx.chOpDay,
     typeDay:ctx.typeDay,attrDay:ctx.attrDay,typeSupMonth:ctx.typeSupMonth,attrSupMonth:ctx.attrSupMonth,prodTypeMonth:ctx.prodTypeMonth,prodAttrMonth:ctx.prodAttrMonth,
@@ -1887,7 +1904,7 @@ function mergeTx(old, incoming){
   const merge3D=(a,b)=>{ if(!b) return; for(const pn in b){ a[pn]=a[pn]||{}; for(const sp in b[pn]){ a[pn][sp]=a[pn][sp]||{}; for(const m in b[pn][sp]){ const inc=b[pn][sp][m]||{dev:0,unsub:0}; const cur=a[pn][sp][m]||{dev:0,unsub:0}; cur.dev=inc.dev; cur.monthDev=inc.monthDev||0; cur.unsub=inc.unsub; a[pn][sp][m]=cur; } } } };
   // 原地合并（不深拷贝旧数据）：old 来自 localStorage 可安全 mutate，避免大对象全量复制导致慢
   const out=old;
-  ["supplierDay","productDay","typeSupDay","attrSupDay","prodTypeDay","prodAttrDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","typeSupMonth","attrSupMonth","prodTypeMonth","prodAttrMonth","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
+  ["supplierDay","productDay","typeSupDay","attrSupDay","prodTypeDay","prodAttrDay","partySupDay","productMonth","prodSupMonth","prov","ch","provDay","chDay","provOpDay","chOpDay","typeDay","attrDay","typeSupMonth","attrSupMonth","prodTypeMonth","prodAttrMonth","meta"].forEach(k=>{ if(out[k]==null) out[k]={}; });
   out.meta.importedFiles=out.meta.importedFiles||[];
   out.meta.statusCounts=out.meta.statusCounts||{};
   // 2026-11-06 修复：10-29 版新增的 5 个日粒度字段未加入上方初始化清单，旧结构 tx 首次导入即崩
@@ -1906,6 +1923,8 @@ function mergeTx(old, incoming){
     cov3D(out.prodTypeDay, incoming.prodTypeDay);
     cov3D(out.prodAttrDay, incoming.prodAttrDay);
   }
+  // 渠道×供货方×日（2026-11-17 新维度）：新旧结构均无历史，无条件覆盖合并即可
+  cov3D(out.partySupDay, incoming.partySupDay);
   const rebuildMonthFromDays=()=>{
     const sum2=(src)=>{const o={};for(const k1 in src){o[k1]={};for(const dt in src[k1]){const mm=String(dt).slice(0,7);const c=src[k1][dt]||{};const t=o[k1][mm]=o[k1][mm]||{dev:0,unsub:0,monthDev:0};t.dev+=c.dev||0;t.unsub+=c.unsub||0;t.monthDev+=c.monthDev||0;}}return o;};
     const sum3=(src)=>{const o={};for(const k1 in src){o[k1]={};for(const k2 in src[k1]){o[k1][k2]={};for(const dt in src[k1][k2]){const mm=String(dt).slice(0,7);const c=src[k1][k2][dt]||{};const t=o[k1][k2][mm]=o[k1][k2][mm]||{dev:0,unsub:0,monthDev:0};t.dev+=c.dev||0;t.unsub+=c.unsub||0;t.monthDev+=c.monthDev||0;}}}return o;};
@@ -2258,10 +2277,57 @@ function refreshProductSortArrows(){
   // 暂只维护产品分析的排序箭头显示（其余台区用自绘箭头，无 .sort-arrow 节点）
 }
 
+// ---- 渠道×供货方质态矩阵（2026-11-17，限额管控视图）----
+function renderPartySupMatrix(tx){
+  const box=document.getElementById("txPartySupTable");
+  if(!box)return;
+  const src=(tx&&tx.partySupDay)||{};
+  const rowsP={},colsS={},cells={};
+  for(const p in src)for(const sp in src[p])for(const dt in src[p][sp]){
+    if(!inScope(dt))continue;
+    const c=src[p][sp][dt]||{};
+    const rp=rowsP[p]=rowsP[p]||{dev:0,monthDev:0,unsub:0};
+    const cs=colsS[sp]=colsS[sp]||{dev:0,monthDev:0,unsub:0};
+    const key=p+"||"+sp;const cell=cells[key]=cells[key]||{dev:0,monthDev:0,unsub:0};
+    rp.dev+=c.dev||0;rp.monthDev+=c.monthDev||0;rp.unsub+=c.unsub||0;
+    cs.dev+=c.dev||0;cs.monthDev+=c.monthDev||0;cs.unsub+=c.unsub||0;
+    cell.dev+=c.dev||0;cell.monthDev+=c.monthDev||0;cell.unsub+=c.unsub||0;
+  }
+  const rowKeys=Object.keys(rowsP).filter(p=>rowsP[p].dev>0).sort((a,b)=>rowsP[b].dev-rowsP[a].dev);
+  const colKeys=Object.keys(colsS).filter(sp=>colsS[sp].dev>0).sort((a,b)=>colsS[b].dev-colsS[a].dev);
+  const tEl=document.getElementById("txPartySupTitleText");
+  if(tEl)tEl.textContent="渠道 × 供货方质态矩阵（限额管控视图 · "+scopeLabel()+"）";
+  if(rowKeys.length===0){
+    box.innerHTML='<div class="empty">该时间范围暂无渠道×供货方数据。需导入含「渠道方」列的明细；升级后首次使用请清空并重导历史文件。</div>';
+    return;
+  }
+  const colShow=colKeys.slice(0,14);
+  const colorFor=rate=>rate>=15?'#fecaca':rate>=8?'#fde68a':'#d1fae5';
+  const txtFor=rate=>rate>=15?'#991b1b':rate>=8?'#92400e':'#065f46';
+  const totalDev=rowKeys.reduce((s,p)=>s+rowsP[p].dev,0);
+  const rowShow=rowKeys.slice(0,60);
+  let html=`<thead><tr><th style="text-align:left">渠道方＼供货方</th>`+colShow.map(sp=>`<th title="${esc(sp)}">${esc(supplierLabel(sp)||sp)}</th>`).join("")+`<th>行合计</th></tr></thead><tbody>`;
+  html+=rowShow.map(p=>{
+    const rp=rowsP[p];
+    const tds=colShow.map(sp=>{
+      const c=cells[p+"||"+sp];
+      if(!c||!c.dev)return '<td style="background:#f3f4f6"><span style="color:#9ca3af;font-size:10.5px">未投放</span></td>';
+      const rate=c.monthDev>0?c.unsub/c.monthDev*100:0;
+      const tip=p+" × "+sp+"：发展 "+fmt(c.dev)+"（月包 "+fmt(c.monthDev)+"）· 退订 "+fmt(c.unsub)+" · 退订率 "+rate.toFixed(2)+"%";
+      return `<td style="background:${colorFor(rate)}" title="${esc(tip)}"><div style="font-weight:700;color:${txtFor(rate)}">${c.monthDev>0?rate.toFixed(1)+"%":"—"}</div><div style="font-size:10px;color:${txtFor(rate)}">${fmt(c.dev)} 单</div></td>`;
+    }).join("");
+    const rowRate=rp.monthDev>0?rp.unsub/rp.monthDev*100:0;
+    const rowCls=rowRate>=15?'#b91c1c':rowRate>=8?'#92400e':'#065f46';
+    return `<tr><td style="text-align:left" title="${esc(p)}"><span class="nm" title="${esc(p)}">${esc(p)}</span></td>${tds}<td><b>${fmt(rp.dev)}</b><div style="font-size:10px;color:${rowCls}">${rowRate.toFixed(1)}%</div></td></tr>`;
+  }).join("");
+  html+=`<tr style="background:#f3f4f6"><td style="text-align:left;font-weight:700">列合计退订率</td>`+colShow.map(sp=>{const cs=colsS[sp];const rate=cs.monthDev>0?cs.unsub/cs.monthDev*100:0;return `<td style="font-weight:700">${cs.dev>0?rate.toFixed(1)+"%":"—"}</td>`;}).join("")+`<td><b>${fmt(totalDev)}</b></td></tr>`;
+  if(rowKeys.length>rowShow.length)html+=`<tr><td colspan="${colShow.length+2}" style="text-align:center;padding:8px"><span class="tx-note">共 ${rowKeys.length} 个渠道，仅显示订单量前 ${rowShow.length} 个</span></td></tr>`;
+  box.innerHTML=html+`</tbody>`;
+}
 function renderTx(){
   if(supFocus){const _s=document.getElementById("txSup");if(_s&&_s.classList.contains("collapsed")){_s.classList.remove("collapsed");}}
   const tx=getTx(),meta=document.getElementById("txMeta");
-  if(!tx){meta.textContent="尚未导入数据，上传文件后自动生成下方看板。";document.getElementById("txKpis").innerHTML="";["txTrendCount","txTrendMonth","txSupTable","txProdTable","txProv","txCh","txTypePie","txTypeBar","txTypeTable","txAttrPie","txAttrBar","txAttrTable"].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<div class="empty">待导入</div>';});["txY","txM","txD"].forEach(id=>{const s=document.getElementById(id);if(s){s.innerHTML='<option value="">'+(id==="txY"?"全部年份":id==="txM"?"全部月份":"全部日期")+'</option>';s.value="";}});const sl=document.getElementById("txScopeLabel");if(sl)sl.textContent=scopeLabel();const _w=document.getElementById("chanWarn");if(_w)_w.classList.add("hidden");const _b=document.getElementById("chanMapBadge");if(_b)_b.style.display="none";return;}
+  if(!tx){meta.textContent="尚未导入数据，上传文件后自动生成下方看板。";document.getElementById("txKpis").innerHTML="";["txTrendCount","txTrendMonth","txSupTable","txProdTable","txProv","txCh","txTypePie","txTypeBar","txTypeTable","txAttrPie","txAttrBar","txAttrTable","txPartySupTable"].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<div class="empty">待导入</div>';});["txY","txM","txD"].forEach(id=>{const s=document.getElementById(id);if(s){s.innerHTML='<option value="">'+(id==="txY"?"全部年份":id==="txM"?"全部月份":"全部日期")+'</option>';s.value="";}});const sl=document.getElementById("txScopeLabel");if(sl)sl.textContent=scopeLabel();const _w=document.getElementById("chanWarn");if(_w)_w.classList.add("hidden");const _b=document.getElementById("chanMapBadge");if(_b)_b.style.display="none";return;}
   const fileLabel=tx.meta.importedFiles&&tx.meta.importedFiles.length>1?`累计 ${tx.meta.importedFiles.length} 个文件`:tx.meta.file;
   meta.textContent=`已导入：${fileLabel} · ${fmt(tx.meta.rows)} 行 · ${tx.meta.dateMin}~${tx.meta.dateMax} · 更新于 ${tx.meta.time}`;
   if(supFocus||prodFocus){
@@ -2336,6 +2402,7 @@ function renderTx(){
     if(distEl)distEl.textContent="产品分布 / 渠道分布（不同省/渠道 × 不同运营商 的发展订单数量及总数）"+(scopeEmpty()?"":" · "+scopeLabel().replace("当前范围：",""));
   }
   if(!secCollapsed("txTypeSec")||!secCollapsed("txAttrSec"))renderChannelTypeAttr(tx);
+  if(!secCollapsed("txPartySup"))renderPartySupMatrix(tx);
   renderChanMap(tx);
 }
 function renderDimTable(id, dayMap, flat, headerLabel){
