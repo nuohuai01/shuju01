@@ -238,7 +238,7 @@
     .kpi{padding:10px;}
     .kpi .vl{font-size:19px;}
     .kpi-tip{font-size:11.5px;line-height:1.55;padding:7px 9px;margin-top:6px;}
-    .kpi-spark{width:100%;height:22px;display:block;margin-top:4px;}
+    .kpi-spark{width:100%;height:30px;display:block;margin-top:4px;}
     .trend-bars{width:76px;height:18px;display:block;}
     #kpiTable{min-width:880px;}
     .alert{font-size:12.5px;padding:7px 10px;}
@@ -1455,7 +1455,8 @@ function trendBarsSVG(t7){
   return out+`</svg>`;
 }
 // 2026-11-17 新增：KPI 卡「本月 vs 上月同位置」双迷你线（几号对几号；灰虚线尾部=按上月节奏外推；悬停显示每日数值）
-function kpiSparkSVG(curAgg,prevAgg,ym,pym,field){
+// 2026-11-18 加强：两线之间填充「跑赢绿/跑输红」色带，解决两线贴近时对比不明显的问题
+function kpiSparkSVG(curAgg,prevAgg,ym,pym,field,upIsGood){
   const md=new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate();
   const val=c=>field==="rate"?(c.monthDev?((c.unsub||0)/c.monthDev*100):0):(c[field]||0);
   let max=0;const cur=[],prev=[];
@@ -1468,13 +1469,25 @@ function kpiSparkSVG(curAgg,prevAgg,ym,pym,field){
   const x=d=>d===1?1:1+(d-1)/(md-1)*(W-2);
   const y=v=>H-2-(v/max)*(H-6);
   const pts=a=>a.map((v,i)=>v==null?null:x(i+1).toFixed(1)+","+y(v).toFixed(1)).filter(Boolean).join(" ");
+  // 跑赢/跑输色带：相邻两天均有本月与上月值时，填充两线间的四边形
+  let fills="";
+  for(let i=0;i+1<md;i++){
+    if(cur[i]==null||cur[i+1]==null||prev[i]==null||prev[i+1]==null)continue;
+    const w1=upIsGood?(cur[i]-prev[i]):(prev[i]-cur[i]);
+    const w2=upIsGood?(cur[i+1]-prev[i+1]):(prev[i+1]-cur[i+1]);
+    const col=(w1>=0&&w2>=0)?"#10b981":((w1<0&&w2<0)?"#ef4444":"#f59e0b");
+    fills+=`<polygon points="${x(i+1).toFixed(1)},${y(cur[i]).toFixed(1)} ${x(i+2).toFixed(1)},${y(cur[i+1]).toFixed(1)} ${x(i+2).toFixed(1)},${y(prev[i+1]).toFixed(1)} ${x(i+1).toFixed(1)},${y(prev[i]).toFixed(1)}" fill="${col}" fill-opacity="0.16"/>`;
+  }
   let dots="";
   for(let i=0;i<md;i++){if(cur[i]==null)continue;
     const num=v=>field==="rate"?v.toFixed(1)+"%":fmt(Math.round(v))+" 笔";
     const tip=(+ym.slice(5,7))+"月"+(i+1)+"日 · 本月 "+num(cur[i])+(prev[i]!=null?(" · 上月同期 "+num(prev[i])):"");
     dots+=`<circle cx="${x(i+1).toFixed(1)}" cy="${y(cur[i]).toFixed(1)}" r="4" fill="transparent"><title>${esc(tip)}</title></circle>`;}
-  const pl=(p,dash,color)=>p?`<polyline points="${p}" fill="none" stroke="${color}" stroke-width="1.6" stroke-dasharray="${dash||""}" vector-effect="non-scaling-stroke"/>`:"";
-  return `<svg class="kpi-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`+pl(pts(prev),"3 2","#9ca3af")+pl(pts(cur),"","#8b5cf6")+dots+`</svg>`;
+  const pl=(p,dash,color,wd)=>p?`<polyline points="${p}" fill="none" stroke="${color}" stroke-width="${wd||1.6}" stroke-dasharray="${dash||""}" vector-effect="non-scaling-stroke"/>`:"";
+  return `<svg class="kpi-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`+fills
+    +pl(pts(prev),"3 2","#7b8294",1.4)
+    +pl(pts(cur),"","#8b5cf6",2)
+    +dots+`</svg>`;
 }
 function prevYmStr(ym){const y=+ym.slice(0,4),m=+ym.slice(5,7);const pm=m===1?12:m-1,py=m===1?y-1:y;return py+"-"+String(pm).padStart(2,"0");}
 function renderMetrics(){
@@ -2359,12 +2372,12 @@ function renderTx(){
   else if(txY){const ys=allDates.filter(d=>d.startsWith(txY));monthForDaily=ys.length?ys[ys.length-1].slice(0,7):null;}
   else monthForDaily=allDates.length?allDates[allDates.length-1].slice(0,7):null;
   const _prevM=monthForDaily?prevYmStr(monthForDaily):null;
-  const spark=f=>monthForDaily?kpiSparkSVG(dayAgg,dayAgg,monthForDaily,_prevM,f):"";
+  const spark=(f,up)=>monthForDaily?kpiSparkSVG(dayAgg,dayAgg,monthForDaily,_prevM,f,up):"";
   document.getElementById("txKpis").innerHTML=`
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">发展订单数</div><div class="vl">${fmt(dev)}<span class="u">笔</span></div>${spark("dev")}</div>
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">月包订单量</div><div class="vl">${fmt(monthDev)}<span class="u">笔</span></div>${spark("monthDev")}</div>
-    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">退订数</div><div class="vl">${fmt(unsub)}<span class="u">笔</span></div>${spark("unsub")}</div>
-    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div>${spark("rate")}</div>`;
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">发展订单数</div><div class="vl">${fmt(dev)}<span class="u">笔</span></div>${spark("dev",true)}</div>
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">月包订单量</div><div class="vl">${fmt(monthDev)}<span class="u">笔</span></div>${spark("monthDev",true)}</div>
+    <div class="kpi"><div class="tag cnt">计数</div><div class="nm">退订数</div><div class="vl">${fmt(unsub)}<span class="u">笔</span></div>${spark("unsub",false)}</div>
+    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div>${spark("rate",false)}</div>`;
   const daySrc=monthForDaily?(idxMonth[monthForDaily]||{}):{};
   const trendArr=Object.keys(daySrc).sort().map(d=>({label:parseInt(d.slice(8),10)+"日",val:daySrc[d]}));
   document.getElementById("txTrendCount").innerHTML=lineSVG(trendArr,"#4f46e5","笔");
