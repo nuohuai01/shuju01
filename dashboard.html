@@ -565,7 +565,6 @@ if(/share=1/.test(location.search)){(function(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       待办
     </h2>
-    <p class="desc">近日待办：支持添加、编辑、备注、删除，自动记录创建时间与办理完成时间。已完成任务可按「创建月 / 完成月 / 关键字」筛选，并支持折叠归档。</p>
     <form id="taskForm">
       <div class="row">
         <div style="flex:2;min-width:200px;">
@@ -598,7 +597,6 @@ if(/share=1/.test(location.search)){(function(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       数据导入
     </h2>
-    <p class="desc">支持数据导入、字段识别筛选、清除历史数据。导入后自动汇总并联动上方所有看板。再次上传按日去重合并（长期累积）。</p>
     <label class="btn primary" id="btnImportTx" for="txFile" style="display:flex;width:100%;justify-content:center;margin:0 0 10px;font-size:14px;cursor:pointer;">↑ 选择文件并导入（可多选批量 · 自动识别列映射）</label>
     <div class="dropzone" id="dropzone">点击上方按钮选择，或把 .xlsx / .csv 拖到这里（自动识别聚杰后台格式，多个文件可一次拖入）</div>
     <input type="file" id="txFile" accept=".xlsx,.csv" class="file-hidden" multiple>
@@ -653,7 +651,6 @@ if(/share=1/.test(location.search)){(function(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
       交易数据
     </h2>
-    <p class="desc">基于导入的交易明细，按时间范围下钻分析。设置时间范围后，下方所有看板联动。发展订单 = 交易成功 + 办理成功后退订（已剔除 交易失败 / 预提交成功）。口径：SKU业务类型 =「流量-次包」的行不计入退订率（分子分母同步剔除）。</p>
 
     <div class="tx-filter" id="txFilterBar">
       <span class="fl">数据周期筛选</span>
@@ -683,7 +680,6 @@ if(/share=1/.test(location.search)){(function(){
     <div class="sec" id="txSup">
       <div class="sec-title collapsible" onclick="toggleSec('txSup')"><span class="chev">▾</span><span id="txSupTitleText">供货方分析（发展订单数 + 环比 + 月包退订数 + 月包退订率）</span></div>
       <div class="sec-body">
-        <div class="tx-note">统计筛选周期内各机构（供货方）对应的订单数量、环比、月包退订数、月包退订率（不含流量-次包）。环比 = 与所选周期的上一周期相比。「发展订单」列内的条形长度表示该供货方在全部供货方中的占比，便于横向对比排名。</div>
         <div class="tx-legend"><span class="lg"><span class="sw" style="background:#ef4444"></span>退订率 ≥15% 高危</span><span class="lg"><span class="sw" style="background:#f59e0b"></span>8%–15% 关注</span><span class="lg"><span class="sw" style="background:#10b981"></span>&lt;8% 健康</span><span class="lg">环比 ▲红涨 ▼绿跌</span></div>
         <div class="table-wrap no-scroll"><table class="tx-table" id="txSupTable"></table></div>
       </div>
@@ -692,7 +688,6 @@ if(/share=1/.test(location.search)){(function(){
     <div class="sec" id="txProd">
       <div class="sec-title collapsible" onclick="toggleSec('txProd')"><span class="chev">▾</span><span id="txProdTitleText">产品分析（按供货方筛选，展示对应产品 + 环比 + 订单数 + 月包退订数 + 月包退订率）</span></div>
       <div class="sec-body">
-        <div class="tx-note">支持按供货方筛选，展示对应供货商的所有产品、环比、订单数、月包退订数、月包退订率。月包退订率 = 月包退订数 ÷ 月包订单数 × 100%（分子分母均不含流量-次包）。「发展订单」列内的条形长度表示该产品在全部产品中的占比，便于横向对比排名。</div>
         <div class="tx-legend"><span class="lg"><span class="sw" style="background:#ef4444"></span>退订率 ≥15% 高危</span><span class="lg"><span class="sw" style="background:#f59e0b"></span>8%–15% 关注</span><span class="lg"><span class="sw" style="background:#10b981"></span>&lt;8% 健康</span></div>
         <div class="tx-filter" style="margin-top:8px;"><span class="fl">按供货方查看</span><select id="txProdSup" onchange="onProdSupChange()"><option value="">全部供货方</option></select></div>
         <div class="table-wrap no-scroll"><table class="tx-table" id="txProdTable"></table></div>
@@ -718,7 +713,6 @@ if(/share=1/.test(location.search)){(function(){
     <div class="sec" id="txPartySup">
       <div class="sec-title collapsible" onclick="toggleSec('txPartySup')"><span class="chev">▾</span><span id="txPartySupTitleText">渠道 × 供货方质态矩阵（限额管控视图 · 跟随时间范围联动）</span></div>
       <div class="sec-body">
-        <div class="tx-note">行=渠道方，列=供货方，格子=该渠道跑该供货方的月包退订率（色阶）与订单量，用于调整渠道限额保证整体质态。悬停格子显示发展/月包/退订明细。口径与全站一致（白名单、次包剔除）。</div>
         <div class="tx-legend"><span class="lg"><span class="sw" style="background:#fecaca"></span>退订率 ≥15% 高危</span><span class="lg"><span class="sw" style="background:#fde68a"></span>8%–15% 关注</span><span class="lg"><span class="sw" style="background:#d1fae5"></span>&lt;8% 健康</span><span class="lg">灰=未投放</span></div>
         <div class="table-wrap no-scroll"><table class="tx-table" id="txPartySupTable"></table></div>
       </div>
@@ -728,7 +722,6 @@ if(/share=1/.test(location.search)){(function(){
     <div class="sec" id="txTypeSec">
       <div class="sec-title collapsible" onclick="toggleSec('txTypeSec')"><span class="chev">▾</span><span id="txTypeTitleText">渠道类型分析（周期内发展订单数量、占比 · 饼图）</span></div>
       <div class="sec-body">
-        <div class="tx-note">按照渠道类型展示周期内的发展订单数量、占比，加饼图展示。</div>
         <div class="chart-row" style="margin-top:6px;">
           <div class="chart-box" id="txTypeCard" style="flex:1;min-width:240px;"><div id="txTypePie"></div></div>
         </div>
@@ -738,7 +731,6 @@ if(/share=1/.test(location.search)){(function(){
     <div class="sec" id="txAttrSec">
       <div class="sec-title collapsible" onclick="toggleSec('txAttrSec')"><span class="chev">▾</span><span id="txAttrTitleText">渠道属性分析（周期内发展订单数量、占比 · 饼图）</span></div>
       <div class="sec-body">
-        <div class="tx-note">按照渠道属性展示周期内的发展订单数量、占比，加饼图展示。</div>
         <div class="chart-row" style="margin-top:6px;">
           <div class="chart-box" id="txAttrCard" style="flex:1;min-width:240px;"><div id="txAttrPie"></div></div>
         </div>
@@ -2372,8 +2364,7 @@ function renderTx(){
     <div class="kpi"><div class="tag cnt">计数</div><div class="nm">发展订单数</div><div class="vl">${fmt(dev)}<span class="u">笔</span></div>${spark("dev")}</div>
     <div class="kpi"><div class="tag cnt">计数</div><div class="nm">月包订单量</div><div class="vl">${fmt(monthDev)}<span class="u">笔</span></div>${spark("monthDev")}</div>
     <div class="kpi"><div class="tag cnt">计数</div><div class="nm">退订数</div><div class="vl">${fmt(unsub)}<span class="u">笔</span></div>${spark("unsub")}</div>
-    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div>${spark("rate")}</div>`
-    +`<div class="kpi-tip">月包订单量 = 办理成功 + 退订订单数（流量-次包不计入，但计入发展订单总数）；月包退订率 = 退订数 ÷ 月包订单量 × 100%；迷你趋势线：紫实线=本月逐日，灰虚线=上月同位置（尾部虚线=按上月节奏外推），悬停显示每日数值</div>`;
+    <div class="kpi"><div class="tag rate">比率</div><div class="nm">月包退订率</div><div class="vl ${rateCls}">${rate.toFixed(2)}%</div>${spark("rate")}</div>`;
   const daySrc=monthForDaily?(idxMonth[monthForDaily]||{}):{};
   const trendArr=Object.keys(daySrc).sort().map(d=>({label:parseInt(d.slice(8),10)+"日",val:daySrc[d]}));
   document.getElementById("txTrendCount").innerHTML=lineSVG(trendArr,"#4f46e5","笔");
