@@ -524,7 +524,7 @@ if(/share=1/.test(location.search)){(function(){
       </div>
       <div>
         <h1>数据看板</h1>
-        <p>任务 · 交易数据 · 导入 · <span id="pageVer" style="color:var(--primary);font-weight:600">v2026-10-29-sec</span></p>
+        <p>任务 · 交易数据 · 导入 · <span id="pageVer" style="color:var(--primary);font-weight:600">v2026-11-25</span></p>
       </div>
     </div>
     <div class="toolbar">
@@ -2991,11 +2991,10 @@ renderAll();
 try{
   var __pv=document.getElementById("pageVer");
   if(__pv){
-    var __t=new Date(performance.timeOrigin||Date.now());
-    var __pad=function(n){return n<10?("0"+n):(""+n);};
-    var __vtxt=function(){return "v2026-10-29-sec · 加载于 "+__pad(__t.getHours())+":"+__pad(__t.getMinutes())+":"+__pad(__t.getSeconds())+" · 视口 "+window.innerWidth+"×"+window.innerHeight;};
-    __pv.textContent=__vtxt();
-    window.addEventListener("resize",function(){try{__pv.textContent=__vtxt();}catch(e){}});
+    // 2026-11-25：版本标签改为「版本 + 数据截止范围」，去掉调试信息（加载时间/视口）
+    var _t=null;try{_t=getTx();}catch(e){}
+    var _range=(_t&&_t.meta&&_t.meta.dateMin&&_t.meta.dateMax)?(" · 数据 "+_t.meta.dateMin+"~"+_t.meta.dateMax):"";
+    __pv.textContent="v2026-11-25"+_range;
   }
 }catch(e){}
 </script>
