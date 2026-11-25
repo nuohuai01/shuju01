@@ -6,7 +6,7 @@
 <title>产品台账 · 上架产品统计</title>
 <script>if(window.self!==window.top)document.documentElement.classList.add('embedded');</script>
 <script>
-  window.addEventListener("error",function(e){try{var el=document.getElementById("gErr");if(!el){el=document.createElement("div");el.id="gErr";el.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#991b1b;color:#fff;padding:9px 14px;border-radius:10px;font-size:12.5px;line-height:1.5;max-width:72vw;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none";document.body.appendChild(el);}el.textContent="页面出错："+(e.message||"未知错误")+(e.filename?"  ("+e.filename.split("/").pop()+":"+e.lineno+")":"");el.style.display="block";clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},7000);}catch(_){}});
+  window.addEventListener("error",function(e){try{var el=document.getElementById("gErr");if(!el){el=document.createElement("div");el.id="gErr";el.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#991b1b;color:#fff;padding:9px 14px;border-radius:10px;font-size:12.5px;line-height:1.5;max-width:72vw;box-shadow:0 6px 18px rgba(0,0,0,.28);display:none;white-space:pre-wrap;";document.body.appendChild(el);}var st=(e.error&&e.error.stack)?String(e.error.stack).split("\n").slice(1,4).join("\n"):"";el.textContent="页面出错："+(e.message||"未知错误")+(e.filename?"  ("+e.filename.split("/").pop()+":"+e.lineno+")":"")+(st?("\n"+st):"");el.style.display="block";clearTimeout(el._t);el._t=setTimeout(function(){el.style.display="none";},12000);}catch(_){}});
   function goTab(n){try{localStorage.setItem("wb_shell_tab",JSON.stringify({name:n,qs:""}));}catch(e){}if(window.parent!==window&&parent.switchTab){parent.switchTab(n);return false;}return true;}
 </script>
 <script>
