@@ -3020,11 +3020,23 @@ renderAll();
 try{
   var __pv=document.getElementById("pageVer");
   if(__pv){
-    // 2026-11-26：徽标改为「最后更新时间」=tx.meta.time（数据批次标识），与数据导入面板的更新于同源
-    var _t=null;try{_t=getTx();}catch(e){}
-    var _mt=(_t&&_t.meta&&_t.meta.time)||"";
-    var _range=(_t&&_t.meta&&_t.meta.dateMin&&_t.meta.dateMax)?(" · 数据 "+_t.meta.dateMin+"~"+_t.meta.dateMax):"";
-    __pv.textContent="最后更新 "+(_mt||"未知")+_range;
+    // 2026-11-26：徽标=「最后更新时间」(tx.meta.time)。大交易数据走 IndexedDB 异步加载，
+    // 同步执行时 getTx 可能拿到 null → 延迟到启动完成后再刷（轮询 _txCache 就绪）
+    var __updVer=function(){
+      var _t=null;try{_t=getTx();}catch(e){}
+      if(!_t){return false;}
+      var _mt=(_t.meta&&_t.meta.time)||"";
+      var _range=(_t.meta&&_t.meta.dateMin&&_t.meta.dateMax)?(" · 数据 "+_t.meta.dateMin+"~"+_t.meta.dateMax):"";
+      __pv.textContent="最后更新 "+(_mt||"未知")+_range;
+      return true;
+    };
+    if(!__updVer()){
+      var __vTries=0;
+      var __vTimer=setInterval(function(){
+        __vTries++;
+        try{if(__updVer()||__vTries>20){clearInterval(__vTimer);}}catch(e){clearInterval(__vTimer);}
+      },400);
+    }
   }
 }catch(e){}
 </script>
