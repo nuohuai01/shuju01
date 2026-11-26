@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数据看板 · 云端恢复工具</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f6fa;margin:0;padding:24px;color:#1f2937;}
+  .card{background:#fff;border-radius:12px;padding:18px 20px;max-width:860px;margin:0 auto 14px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  h1{font-size:18px;margin:0 0 4px;} .sub{font-size:12.5px;color:#6b7280;margin-bottom:14px;}
+  input[type=password]{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border:1px solid #d1d5db;border-radius:8px;}
+  button{background:#4f46e5;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
+  button:disabled{background:#9ca3af;cursor:not-allowed;}
+  #log{background:#0f172a;color:#e2e8f0;font-family:Consolas,monospace;font-size:12px;line-height:1.55;border-radius:8px;padding:12px;min-height:200px;max-height:420px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;}
+  .ok{color:#34d399;} .err{color:#f87171;} .warn{color:#fbbf24;}
+  a.open{display:inline-block;margin-top:10px;background:#059669;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>数据看板 · 云端恢复工具</h1>
+  <div class="sub">从 GitHub 拉取云端快照 → 解密 → 逐键写入本机（每一步显示成败）。用于「载入云端」失效时的手动恢复。</div>
+  <input type="password" id="pwd" placeholder="快照口令" value="111111">
+  <button id="go">开始恢复</button>
+  <span id="stat" style="margin-left:12px;font-size:13px;color:#6b7280;"></span>
+</div>
+<div class="card"><div id="log">等待开始…</div></div>
+<div class="card" id="doneCard" style="display:none;">
+  <a class="open" href="dashboard.html">恢复完成 → 打开数据看板</a>
+  <div class="sub" style="margin-top:8px;">打开后核对左上角「最后更新」时间与下方日志一致。</div>
+</div>
+<script>
+const REPO="nuohuai01/shuju01", PWD_KEY="snap_pwd";
+const logEl=document.getElementById("log"), statEl=document.getElementById("stat");
+function log(msg,cls){const d=document.createElement("div");if(cls)d.className=cls;d.textContent=msg;logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight;}
+function setStat(s){statEl.textContent=s;}
+const u8b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const b64u8=u=>{let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s);};
+async function deriveKey(pwd,saltB64){
+  const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pwd),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:u8b64(saltB64),iterations:600000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open("wbDashIDB",1);r.onupgradeneeded=()=>{r.result.createObjectStore("kv");};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function idbSet(key,val){return new Promise((res,rej)=>{idbOpen().then(db=>{const t=db.transaction("kv","readwrite").objectStore("kv");t.put(val,key);t.transaction.oncomplete=()=>res(1);t.transaction.onerror=()=>rej(t.transaction.error);}).catch(rej);});}
+function idbGet(key){return new Promise(res=>{idbOpen().then(db=>{const r=db.transaction("kv","readonly").objectStore("kv").get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>res(undefined);}).catch(()=>res(undefined));});}
+const KTX="wb_workdash_tx_full";
+function findTxKey(ls){for(const k of Object.keys(ls)){try{const v=JSON.parse(ls[k]);if(v&&v.supplierDay)return k;}catch(e){}}return KTX;}
+document.getElementById("go").onclick=async function(){
+  const btn=this;btn.disabled=true;
+  const pwd=document.getElementById("pwd").value;
+  log("== 开始恢复 ==");
+  let snap=null,srcName="";
+  const t=Date.now();
+  // 源1: api.github.com (metadata→blob)
+  try{
+    log("源1 api.github.com：请求 metadata…");
+    const r1=await fetch("https://api.github.com/repos/"+REPO+"/contents/snapshot-v2.json?t="+t,{cache:"no-store"});
+    if(!r1.ok)throw new Error("HTTP "+r1.status);
+    const m=await r1.json();
+    log("源1 metadata OK sha="+String(m.sha).slice(0,10)+" size="+m.size);
+    const r2=await fetch("https://api.github.com/repos/"+REPO+"/git/blobs/"+m.sha+"?t="+t,{cache:"no-store"});
+    if(!r2.ok)throw new Error("blob HTTP "+r2.status);
+    const b=await r2.json();
+    snap=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b.content.replace(/\s/g,"")),c=>c.charCodeAt(0))));
+    srcName="api.github.com";
+    log("源1 成功","ok");
+  }catch(e){log("源1 失败："+e.message,"err");}
+  // 源2: Pages
+  if(!snap)try{
+    log("源2 Pages：请求…");
+    const r=await fetch("snapshot-v2.json?t="+t,{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    snap=await r.json();srcName="Pages";log("源2 成功","ok");
+  }catch(e){log("源2 失败："+e.message,"err");}
+  // 源3: raw
+  if(!snap)try{
+    log("源3 raw.githubusercontent：请求…");
+    const r=await fetch("https://raw.githubusercontent.com/"+REPO+"/main/snapshot-v2.json?t="+t,{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    snap=await r.json();srcName="raw";log("源3 成功","ok");
+  }catch(e){log("源3 失败："+e.message,"err");}
+  if(!snap){log("全部数据源失败，恢复中止","err");setStat("失败");btn.disabled=false;return;}
+  log("快照 time = "+snap.time+"（来源 "+srcName+"）","ok");
+  // 解密
+  let state=null;
+  try{
+    if(!snap.enc)throw new Error("快照未加密？直接使用");
+    state=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8b64(snap.iv)},await deriveKey(pwd,snap.salt),u8b64(snap.ct))));
+    log("解密成功","ok");
+  }catch(e){log("解密失败（口令错误或快照损坏）："+e.message,"err");setStat("失败");btn.disabled=false;return;}
+  const tx=state.tx, ls=state.ls||{};
+  const meta=(tx&&tx.meta)||{};
+  log("数据批次: tx.meta.time="+((meta.time)||"(无)")+" | dateMax="+(meta.dateMax||"(无)")+" | rows="+(meta.rows||0));
+  if(!tx||!tx.supplierDay){log("⚠️ 快照内无交易数据 tx！中止写入以免清空本机","err");setStat("失败");btn.disabled=false;return;}
+  // 写 ls
+  let n=0,fail=0;
+  for(const k of Object.keys(ls)){
+    try{localStorage.setItem(k,ls[k]);n++;}
+    catch(e){fail++;log("  ls 写入失败 "+k+"："+String(e.message).slice(0,60),"warn");}
+  }
+  log("ls 写入完成："+n+" 项成功"+(fail?("，"+fail+" 项失败"):""),fail?"warn":"ok");
+  // 写 tx：IndexedDB（await 确认写完）+ localStorage 双保险
+  const txKey=findTxKey(ls);
+  try{
+    await idbSet(txKey,tx);
+    log("IndexedDB 写入 tx 完成（键 "+txKey+"）","ok");
+  }catch(e){log("IndexedDB 写入失败："+String(e.message).slice(0,80),"err");}
+  try{
+    const s=JSON.stringify(tx);
+    if(s.length<3500000){localStorage.setItem(txKey,s);log("localStorage 也已写入（双保险）","ok");}
+    else log("tx 超过 localStorage 上限，仅存 IndexedDB（正常）","warn");
+  }catch(e){log("localStorage 写入跳过："+String(e.message).slice(0,60),"warn");}
+  try{localStorage.setItem("wb_snap_time",snap.time||"");}catch(e){}
+  try{localStorage.setItem(PWD_KEY,pwd);}catch(e){}
+  // 回读校验
+  const back=await idbGet(txKey);
+  const backOk=back&&back.supplierDay&&Object.keys(back.supplierDay).length>0;
+  log(backOk?("回读校验通过：IndexedDB 内 tx.supplierDay 有 "+Object.keys(back.supplierDay).length+" 个供货方"):"⚠️ 回读校验失败：IndexedDB 里没有数据！",backOk?"ok":"err");
+  setStat(backOk?"恢复成功":"有警告，请看日志");
+  if(backOk){
+    log("== 恢复完成 == 点下方按钮打开看板","ok");
+    document.getElementById("doneCard").style.display="block";
+  }
+  btn.disabled=false;
+};
+</script>
+</body>
+</html>
