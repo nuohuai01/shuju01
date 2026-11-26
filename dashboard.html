@@ -1101,13 +1101,17 @@ async function loadFromCloud(){
     var cloudTime=(d.tx&&d.tx.meta&&d.tx.meta.time)||"";
     var localTx=getTx();
     var localTime=(localTx&&localTx.meta&&localTx.meta.time)||"";
-    function applyCloud(){
+    async function applyCloud(){
       var n=0;
       Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);n++;}catch(e){}});
       if(d.tx){setTx(d.tx);}else{try{delTx();}catch(e){}}
       try{localStorage.setItem("wb_snap_time",d.time||"");}catch(e){}
-      try{showToast("已载入云端数据（"+n+" 项，数据截止 "+((d.tx&&d.tx.meta&&d.tx.meta.dateMax)||"")+"），正在刷新…","ok",5000);}catch(e){}
-      setTimeout(function(){location.reload();},900);
+      try{showToast("已载入云端数据（"+n+" 项，数据截止 "+((d.tx&&d.tx.meta&&d.tx.meta.dateMax)||"")+"），正在写入本地存储…","ok",4000);}catch(e){}
+      // 2026-11-26 修复：大 tx（>3.5MB）只存 IndexedDB（异步），必须等写完再刷新，否则竞态导致载入后数据丢失
+      if(d.tx&&typeof idbSet==="function"){
+        try{await idbSet(KTX,d.tx);}catch(e){}
+      }
+      setTimeout(function(){location.reload();},400);
     }
     if(cloudTime===localTime){
       __loadingCloud=false;
