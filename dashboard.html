@@ -1045,13 +1045,41 @@ let __syncing=false;
 let __loadingCloud=false;
 // 从云端快照载入数据到本机（含交易数据），用于多端对齐/换设备
 async function loadFromCloud(){
-  // 2026-11-25 智能载入：云端更新→免确认直接载入；一致→提示已是最新；云端更旧→确认防覆盖
+  // 2026-11-26 多源取数：api.github.com(动态无缓存) → Pages → raw，取 time 最新者；修复 CDN 缓存导致的"载入无反应"
   if(__loadingCloud)return;
   __loadingCloud=true;
   try{
-    var r=await fetch("snapshot-v2.json?t="+Date.now(),{cache:"no-store"});
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    var d=await r.json();
+    var REPO="nuohuai01/shuju01", t=Date.now();
+    var sources=[
+      async function(){ // api.github.com：metadata→blob（>1MB 必须），无 CDN 缓存
+        var r1=await fetch("https://api.github.com/repos/"+REPO+"/contents/snapshot-v2.json?t="+t,{cache:"no-store"});
+        if(!r1.ok)throw new Error("meta HTTP "+r1.status);
+        var m=await r1.json();
+        var r2=await fetch("https://api.github.com/repos/"+REPO+"/git/blobs/"+m.sha+"?t="+t,{cache:"no-store"});
+        if(!r2.ok)throw new Error("blob HTTP "+r2.status);
+        var b=await r2.json();
+        return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b.content.replace(/\s/g,"")),function(c){return c.charCodeAt(0);})));
+      },
+      async function(){
+        var r=await fetch("snapshot-v2.json?t="+t,{cache:"no-store"});
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        return await r.json();
+      },
+      async function(){
+        var r=await fetch("https://raw.githubusercontent.com/"+REPO+"/main/snapshot-v2.json?t="+t,{cache:"no-store"});
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        return await r.json();
+      }
+    ];
+    var d=null,bestTime="";
+    var rs=await Promise.allSettled(sources.map(function(f){return f();}));
+    rs.forEach(function(res){
+      if(res.status==="fulfilled"&&res.value&&res.value.time&&res.value._export){
+        if(res.value.time>bestTime){bestTime=res.value.time;d=res.value;}
+      }
+    });
+    if(!d)throw new Error("所有数据源均不可达");
+    try{p2log("多源取数完成 bestTime="+bestTime);}catch(e){}
     if(d&&d.enc){
       var pwd=getPwd();
       if(!pwd){
@@ -1096,6 +1124,7 @@ async function loadFromCloud(){
     try{showToast("载入失败："+(err&&err.message||err),"err",7000);}catch(e){}
   }
 }
+function p2log(){}
 async function doShareSync(reason){
   if(/share=1/.test(location.search))return false;
   const tk=getToken();
