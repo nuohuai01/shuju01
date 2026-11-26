@@ -1105,6 +1105,7 @@ async function loadFromCloud(){
       var n=0;
       Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);n++;}catch(e){}});
       if(d.tx){setTx(d.tx);}else{try{delTx();}catch(e){}}
+      try{localStorage.setItem("wb_snap_time",d.time||"");}catch(e){}
       try{showToast("已载入云端数据（"+n+" 项，数据截止 "+((d.tx&&d.tx.meta&&d.tx.meta.dateMax)||"")+"），正在刷新…","ok",5000);}catch(e){}
       setTimeout(function(){location.reload();},900);
     }
@@ -3020,15 +3021,22 @@ renderAll();
 try{
   var __pv=document.getElementById("pageVer");
   if(__pv){
-    // 2026-11-26：徽标=「最后更新时间」(tx.meta.time)。大交易数据走 IndexedDB 异步加载，
-    // 同步执行时 getTx 可能拿到 null → 延迟到启动完成后再刷（轮询 _txCache 就绪）
+    // 2026-11-26：徽标=「最后更新时间」=快照推送时间(wb_snap_time，载入云端时记录)；大tx走IndexedDB异步加载 → 轮询数据就绪后再刷
+    var __fmtT=function(iso){
+      if(!iso)return"";
+      if(/^\d{4}\/\d{1,2}\/\d{1,2} /.test(iso))return iso;
+      var dt=new Date(iso);
+      if(isNaN(dt.getTime()))return iso;
+      var p=function(n){return n<10?("0"+n):(""+n);};
+      return dt.getFullYear()+"/"+(dt.getMonth()+1)+"/"+dt.getDate()+" "+p(dt.getHours())+":"+p(dt.getMinutes())+":"+p(dt.getSeconds());
+    };
     var __updVer=function(){
+      var _st="";try{_st=localStorage.getItem("wb_snap_time")||"";}catch(e){}
       var _t=null;try{_t=getTx();}catch(e){}
-      if(!_t){return false;}
-      var _mt=(_t.meta&&_t.meta.time)||"";
-      var _range=(_t.meta&&_t.meta.dateMin&&_t.meta.dateMax)?(" · 数据 "+_t.meta.dateMin+"~"+_t.meta.dateMax):"";
-      __pv.textContent="最后更新 "+(_mt||"未知")+_range;
-      return true;
+      var _mt=(_t&&_t.meta&&_t.meta.time)||"";
+      var _show=__fmtT(_st)||__fmtT(_mt)||"未知";
+      __pv.textContent="最后更新 "+_show;
+      return !!(_st||_mt);
     };
     if(!__updVer()){
       var __vTries=0;
