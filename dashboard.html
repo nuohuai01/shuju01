@@ -3020,10 +3020,11 @@ renderAll();
 try{
   var __pv=document.getElementById("pageVer");
   if(__pv){
-    // 2026-11-25：版本标签改为「版本 + 数据截止范围」，去掉调试信息（加载时间/视口）
+    // 2026-11-26：徽标改为「最后更新时间」=tx.meta.time（数据批次标识），与数据导入面板的更新于同源
     var _t=null;try{_t=getTx();}catch(e){}
+    var _mt=(_t&&_t.meta&&_t.meta.time)||"";
     var _range=(_t&&_t.meta&&_t.meta.dateMin&&_t.meta.dateMax)?(" · 数据 "+_t.meta.dateMin+"~"+_t.meta.dateMax):"";
-    __pv.textContent="v2026-11-25"+_range;
+    __pv.textContent="最后更新 "+(_mt||"未知")+_range;
   }
 }catch(e){}
 </script>
