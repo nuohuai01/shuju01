@@ -346,6 +346,11 @@ if(/share=1/.test(location.search)){(function(){
         <button class="btn sm" id="btnWide" onclick="setLayout('wide')">双列</button>
       </div>
     </div>
+    
+<!-- ===== 云端同步（与数据看板同源同机制：多源取数+智能载入+IndexedDB等待写入）===== -->
+<span id="prodBadge" style="font-size:12px;color:#6b7280;margin-right:8px;">最后更新 …</span>
+<button class="btn" id="btnWbSync" style="margin-right:8px;">载入云端</button>
+
     <nav class="tabs board-nav">
       <a class="tab" href="dashboard.html" onclick="return goTab('dash')">数据看板</a>
       <a class="tab" href="project.html" onclick="return goTab('proj')">项目档案</a>
@@ -1258,6 +1263,122 @@ function missInit(){
   if(b){b.textContent=n;b.title=n+" 个缺品省份（有品可先测试）";}
 }
 missInit();
+</script>
+<script>
+(function(){
+  /* 共享键（与 dashboard.html 完全一致） */
+  var __KTX="wb_workdash_tx", __PWDK="snap_pwd", __SNAPT="wb_snap_time";
+  var __IDB="wb_workdash_db", __STORE="kv";
+  var REPO="nuohuai01/shuju01";
+  function __log(m,cls){var el=document.getElementById("gErr")||null;try{var t=document.createElement("div");t.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#0f172a;color:#e2e8f0;padding:9px 14px;border-radius:10px;font-size:12.5px;max-width:60vw;box-shadow:0 4px 14px rgba(0,0,0,.3);";t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove();},5000);}catch(e){}}
+  function __idbOpen(){return new Promise(function(res,rej){var r=indexedDB.open(__IDB,1);r.onupgradeneeded=function(e){if(!e.target.result.objectStoreNames.contains(__STORE))e.target.result.createObjectStore(__STORE);};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+  function __idbSet(k,v){return new Promise(function(res,rej){__idbOpen().then(function(db){var t=db.transaction(__STORE,"readwrite").objectStore(__STORE);t.put(v,k);t.transaction.oncomplete=function(){res(1);};t.transaction.onerror=function(){rej(t.transaction.error);};}).catch(rej);});}
+  function __idbGet(k){return new Promise(function(res){__idbOpen().then(function(db){var r=db.transaction(__STORE,"readonly").objectStore(__STORE).get(k);r.onsuccess=function(){res(r.result);};r.onerror=function(){res(undefined);};}).catch(function(){res(undefined);});});}
+  function __idbDel(k){return new Promise(function(res){__idbOpen().then(function(db){var t=db.transaction(__STORE,"readwrite").objectStore(__STORE);t.delete(k);t.transaction.oncomplete=function(){res(1);};}).catch(function(){res(0);});});}
+  const __u8b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  async function __deriveKey(pwd,saltB64){
+    const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pwd),"PBKDF2",false,["deriveKey"]);
+    return crypto.subtle.deriveKey({name:"PBKDF2",salt:__u8b64(saltB64),iterations:600000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
+  }
+  async function __snapDecrypt(snap,pwd){
+    const key=await __deriveKey(pwd,snap.salt);
+    const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:__u8b64(snap.iv)},key,__u8b64(snap.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  var __syncing=false;
+  async function __wbLoadFromCloud(){
+    if(__syncing)return;__syncing=true;
+    try{
+      var t=Date.now();
+      var sources=[
+        async function(){
+          var r1=await fetch("https://api.github.com/repos/"+REPO+"/contents/snapshot-v2.json?t="+t,{cache:"no-store"});
+          if(!r1.ok)throw new Error("meta HTTP "+r1.status);
+          var m=await r1.json();
+          var r2=await fetch("https://api.github.com/repos/"+REPO+"/git/blobs/"+m.sha+"?t="+t,{cache:"no-store"});
+          if(!r2.ok)throw new Error("blob HTTP "+r2.status);
+          var b=await r2.json();
+          return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b.content.replace(/\s/g,"")),function(c){return c.charCodeAt(0);})));
+        },
+        async function(){var r=await fetch("snapshot-v2.json?t="+t,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();},
+        async function(){var r=await fetch("https://raw.githubusercontent.com/"+REPO+"/main/snapshot-v2.json?t="+t,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();}
+      ];
+      var d=null,bestTime="";
+      var rs=await Promise.allSettled(sources.map(function(f){return f();}));
+      rs.forEach(function(res){
+        if(res.status==="fulfilled"&&res.value&&res.value.time&&res.value._export){
+          if(res.value.time>bestTime){bestTime=res.value.time;d=res.value;}
+        }
+      });
+      if(!d)throw new Error("所有数据源均不可达");
+      if(d&&d.enc){
+        var pwd=localStorage.getItem(__PWDK)||"";
+        if(!pwd){
+          __syncing=false;
+          pwd=prompt("该快照已加密，请输入快照口令：")||"";
+          if(!pwd)return;
+          try{localStorage.setItem(__PWDK,pwd);}catch(e){}
+          return __wbLoadFromCloud();
+        }
+        try{d=await __snapDecrypt(d,pwd);}catch(e){
+          __syncing=false;
+          __log("解密失败：口令错误或快照损坏（本机数据未被修改）");
+          return;
+        }
+      }
+      if(!d||!d.ls)throw new Error("云端快照为空");
+      var cloudTime=(d.tx&&d.tx.meta&&d.tx.meta.time)||"";
+      var localTx=null;
+      try{localTx=JSON.parse(localStorage.getItem(__KTX)||"null");}catch(e){}
+      var localTime=(localTx&&localTx.meta&&localTx.meta.time)||"";
+      async function applyCloud(){
+        var n=0;
+        Object.keys(d.ls).forEach(function(k){try{localStorage.setItem(k,d.ls[k]);n++;}catch(e){}});
+        if(d.tx){
+          try{localStorage.setItem(__KTX,JSON.stringify(d.tx));}catch(e){}
+          try{await __idbSet(__KTX,d.tx);}catch(e){}
+        }else{
+          try{localStorage.removeItem(__KTX);}catch(e){}
+          __idbDel(__KTX);
+        }
+        try{localStorage.setItem(__SNAPT,d.time||"");}catch(e){}
+        __log("已载入云端数据（"+n+" 项，数据截止 "+((d.tx&&d.tx.meta&&d.tx.meta.dateMax)||"")+"），正在刷新…");
+        setTimeout(function(){location.reload();},600);
+      }
+      if(cloudTime&&cloudTime===localTime){
+        __syncing=false;
+        __log("云端与本机数据一致，已是最新（更新于 "+cloudTime+"）");
+        return;
+      }
+      if(cloudTime&&localTime&&cloudTime<localTime){
+        __syncing=false;
+        if(!confirm("云端快照时间（"+cloudTime+"）早于本机（"+localTime+"），载入会用旧数据覆盖本机。确定继续？"))return;
+        __syncing=true;
+      }
+      await applyCloud();
+    }catch(err){
+      __syncing=false;
+      __log("载入失败："+(err&&err.message||err));
+    }
+  }
+  function __updBadge(){
+    var el=document.getElementById("prodBadge");
+    if(!el)return;
+    var st="";try{st=localStorage.getItem(__SNAPT)||"";}catch(e){}
+    var tx=null;try{tx=JSON.parse(localStorage.getItem(__KTX)||"null");}catch(e){}
+    var mt=(tx&&tx.meta&&tx.meta.time)||"";
+    var show=st||mt;
+    if(show){var dt=new Date(show);if(!isNaN(dt.getTime())){var p=function(n){return n<10?("0"+n):(""+n);};show=dt.getFullYear()+"/"+(dt.getMonth()+1)+"/"+dt.getDate()+" "+p(dt.getHours())+":"+p(dt.getMinutes())+":"+p(dt.getSeconds());}}
+    el.textContent="最后更新 "+(show||"未知");
+  }
+  document.addEventListener("DOMContentLoaded",function(){
+    var b=document.getElementById("btnWbSync");
+    if(b)b.addEventListener("click",__wbLoadFromCloud);
+    var bt=document.getElementById("btnWbSync2");
+    __updBadge();
+    setTimeout(__updBadge,800);
+  });
+})();
 </script>
 </body>
 </html>
