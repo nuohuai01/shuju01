@@ -43,7 +43,7 @@ async function deriveKey(pwd,saltB64){
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open("wbDashIDB",1);r.onupgradeneeded=()=>{r.result.createObjectStore("kv");};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
 function idbSet(key,val){return new Promise((res,rej)=>{idbOpen().then(db=>{const t=db.transaction("kv","readwrite").objectStore("kv");t.put(val,key);t.transaction.oncomplete=()=>res(1);t.transaction.onerror=()=>rej(t.transaction.error);}).catch(rej);});}
 function idbGet(key){return new Promise(res=>{idbOpen().then(db=>{const r=db.transaction("kv","readonly").objectStore("kv").get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>res(undefined);}).catch(()=>res(undefined));});}
-const KTX="wb_workdash_tx_full";
+const KTX="wb_workdash_tx";
 function findTxKey(ls){for(const k of Object.keys(ls)){try{const v=JSON.parse(ls[k]);if(v&&v.supplierDay)return k;}catch(e){}}return KTX;}
 document.getElementById("go").onclick=async function(){
   const btn=this;btn.disabled=true;
