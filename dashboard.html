@@ -3,6 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+/* ===== 页面自我更新引导块（稳定代码，此块保持不变；通过 api.github.com 无缓存通道自检与自我替换）===== */
+(function(){
+  var APP_VER="2026-11-26.2";
+  var SELF=(location.pathname.split("/").pop()||"dashboard.html");
+  var REPO="nuohuai01/shuju01";
+  function check(){
+    if(typeof fetch!=="function")return; // jsdom/旧环境守卫
+    fetch("https://api.github.com/repos/"+REPO+"/contents/version.json?t="+Date.now(),{cache:"no-store"})
+      .then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(j){
+        var info=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\s/g,"")),function(c){return c.charCodeAt(0);})));
+        if(!info.ver||info.ver===APP_VER)return;
+        var b=document.createElement("div");
+        b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#4f46e5;color:#fff;padding:10px 16px;font-size:14px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);";
+        b.textContent="🔄 页面代码有新版本（"+info.ver+"）· 点击立即更新（地址不变，约需数秒）";
+        b.onclick=function(){
+          b.textContent="正在获取新代码…";
+          fetch("https://api.github.com/repos/"+REPO+"/contents/"+SELF+"?t="+Date.now(),{cache:"no-store"})
+            .then(function(r){return r.json();})
+            .then(function(m){return fetch("https://api.github.com/repos/"+REPO+"/git/blobs/"+m.sha,{cache:"no-store"}).then(function(r2){return r2.json();}).then(function(bl){
+              var html=new TextDecoder().decode(Uint8Array.from(atob(bl.content.replace(/\s/g,"")),function(c){return c.charCodeAt(0);}));
+              try{localStorage.setItem("wb_app_code_ver",info.ver);}catch(e){}
+              document.open();document.write(html);document.close();
+            });})
+            .catch(function(e){b.textContent="更新失败："+e.message;setTimeout(function(){b.remove();},6000);});
+        };
+        (document.body||document.documentElement).appendChild(b);
+      })
+      .catch(function(){});
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){setTimeout(check,800);});
+  else setTimeout(check,800);
+})();
+</script>
 <title>数据看板</title>
 <script>if(window.self!==window.top)document.documentElement.classList.add('embedded');</script>
 <script>
